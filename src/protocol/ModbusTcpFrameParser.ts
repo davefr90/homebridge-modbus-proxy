@@ -1,8 +1,4 @@
-import {
-  LENGTH_OFFSET,
-  MAX_FRAME_SIZE,
-  PREFIX_SIZE,
-} from './ModbusTcpConstants.js';
+import { LENGTH_OFFSET, MAX_FRAME_SIZE, PREFIX_SIZE, } from './ModbusTcpConstants.js';
 import { ModbusTcpDecoder } from './ModbusTcpDecoder.js';
 import { ModbusTcpFrame } from './ModbusTcpFrame.js';
 

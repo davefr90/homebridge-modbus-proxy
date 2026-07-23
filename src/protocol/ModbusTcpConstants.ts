@@ -3,7 +3,13 @@
  */
 export const MBAP_HEADER_SIZE = 7;
 export const FUNCTION_CODE_SIZE = 1;
-export const MIN_FRAME_SIZE = MBAP_HEADER_SIZE + FUNCTION_CODE_SIZE;
+export const MIN_FRAME_SIZE =
+  MBAP_HEADER_SIZE + FUNCTION_CODE_SIZE;
+
+/**
+ * Modbus TCP protocol identifier.
+ */
+export const MODBUS_PROTOCOL_ID = 0;
 
 /**
  * Byte offsets inside a Modbus TCP frame.
