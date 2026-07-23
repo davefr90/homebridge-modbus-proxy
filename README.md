@@ -5,7 +5,7 @@ A high-performance Modbus TCP proxy plugin for Homebridge.
 > Modern, scalable and designed for industrial-grade Modbus TCP communication.
 
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
-![License](https://img.shields.io/badge/license-Apache%202.0-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![Node](https://img.shields.io/badge/node-%3E%3D22-green)
 
 ---
@@ -23,7 +23,7 @@ It provides:
 - Multiple simultaneous clients
 - Register cache
 - Connection statistics
-- Future web dashboard
+- Web dashboard (planned)
 - Register explorer
 
 ---
@@ -81,6 +81,10 @@ It provides:
 - [ ] Dashboard
 - [ ] Register explorer
 - [ ] Homebridge configuration interface
+- [ ] Modbus register explorer
+- [ ] Device diagnostics
+- [ ] Performance monitoring
+- [ ] Homebridge UI integration
 
 ---
 
@@ -155,4 +159,14 @@ This architecture allows the Modbus engine to remain largely independent from Ho
 
 ## License
 
-Licensed under the Apache License 2.0.
+Licensed under the MIT License.
+
+---
+
+## Why?
+
+Many Modbus TCP devices allow only a limited number of simultaneous client connections or suffer from unstable communication when accessed by multiple applications.
+
+**homebridge-modbus-proxy** solves this by acting as a single intelligent communication layer between clients and Modbus devices.
+
+This improves stability, scalability and performance while providing a clean API for future extensions.
