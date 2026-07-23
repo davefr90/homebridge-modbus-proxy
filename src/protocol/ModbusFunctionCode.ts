@@ -16,4 +16,9 @@ export enum ModbusFunctionCode {
    * Write Single Register.
    */
   WriteSingleRegister = 0x06,
+
+  /**
+   * Write Multiple Registers.
+   */
+  WriteMultipleRegisters = 0x10,
 }

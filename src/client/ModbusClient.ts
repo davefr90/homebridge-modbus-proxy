@@ -6,9 +6,11 @@ import { ModbusRequest } from './ModbusRequest.js';
 import { PendingRequest } from './PendingRequest.js';
 import { ReadHoldingRegistersRequest } from './requests/ReadHoldingRegistersRequest.js';
 import { ReadInputRegistersRequest } from './requests/ReadInputRegistersRequest.js';
+import { WriteMultipleRegistersRequest } from './requests/WriteMultipleRegistersRequest.js';
 import { WriteSingleRegisterRequest } from './requests/WriteSingleRegisterRequest.js';
 import { ReadHoldingRegistersResponseParser } from './responses/ReadHoldingRegistersResponseParser.js';
 import { ReadInputRegistersResponseParser } from './responses/ReadInputRegistersResponseParser.js';
+import { WriteMultipleRegistersResponseParser } from './responses/WriteMultipleRegistersResponseParser.js';
 import { WriteSingleRegisterResponseParser } from './responses/WriteSingleRegisterResponseParser.js';
 import { TransactionManager } from './TransactionManager.js';
 
@@ -131,9 +133,6 @@ export class ModbusClient {
   /**
    * Writes one register using Modbus function code 0x06.
    *
-   * The server must echo the written register address and value.
-   * The method resolves only after that response has been validated.
-   *
    * @param unitId Modbus unit identifier.
    * @param address Register address.
    * @param value Unsigned 16-bit register value.
@@ -155,6 +154,33 @@ export class ModbusClient {
       frame,
       address,
       value,
+    );
+  }
+
+  /**
+   * Writes multiple registers using Modbus function code 0x10.
+   *
+   * @param unitId Modbus unit identifier.
+   * @param address Start register address.
+   * @param values Unsigned 16-bit register values.
+   */
+  public async writeMultipleRegisters(
+    unitId: number,
+    address: number,
+    values: number[],
+  ): Promise<void> {
+    const request = WriteMultipleRegistersRequest.create(
+      unitId,
+      address,
+      values,
+    );
+
+    const frame = await this.sendRequest(request);
+
+    WriteMultipleRegistersResponseParser.parse(
+      frame,
+      address,
+      values.length,
     );
   }
 
