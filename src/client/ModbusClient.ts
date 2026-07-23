@@ -6,10 +6,15 @@ import { ModbusRequest } from './ModbusRequest.js';
 import { PendingRequest } from './PendingRequest.js';
 import { ReadHoldingRegistersRequest } from './requests/ReadHoldingRegistersRequest.js';
 import { ReadInputRegistersRequest } from './requests/ReadInputRegistersRequest.js';
+import { WriteSingleRegisterRequest } from './requests/WriteSingleRegisterRequest.js';
 import { ReadHoldingRegistersResponseParser } from './responses/ReadHoldingRegistersResponseParser.js';
 import { ReadInputRegistersResponseParser } from './responses/ReadInputRegistersResponseParser.js';
+import { WriteSingleRegisterResponseParser } from './responses/WriteSingleRegisterResponseParser.js';
 import { TransactionManager } from './TransactionManager.js';
 
+/**
+ * Modbus TCP client.
+ */
 export class ModbusClient {
   private readonly connection: TcpConnection;
   private readonly transactionManager: TransactionManager;
@@ -75,7 +80,7 @@ export class ModbusClient {
    * @param unitId Modbus unit identifier.
    * @param address Start register address.
    * @param quantity Number of registers to read.
-   * @returns The decoded 16-bit register values.
+   * @returns The decoded unsigned 16-bit register values.
    */
   public async readHoldingRegisters(
     unitId: number,
@@ -102,7 +107,7 @@ export class ModbusClient {
    * @param unitId Modbus unit identifier.
    * @param address Start register address.
    * @param quantity Number of registers to read.
-   * @returns The decoded 16-bit register values.
+   * @returns The decoded unsigned 16-bit register values.
    */
   public async readInputRegisters(
     unitId: number,
@@ -124,7 +129,38 @@ export class ModbusClient {
   }
 
   /**
-   * Sends a Modbus request and waits for the matching response.
+   * Writes one register using Modbus function code 0x06.
+   *
+   * The server must echo the written register address and value.
+   * The method resolves only after that response has been validated.
+   *
+   * @param unitId Modbus unit identifier.
+   * @param address Register address.
+   * @param value Unsigned 16-bit register value.
+   */
+  public async writeSingleRegister(
+    unitId: number,
+    address: number,
+    value: number,
+  ): Promise<void> {
+    const request = WriteSingleRegisterRequest.create(
+      unitId,
+      address,
+      value,
+    );
+
+    const frame = await this.sendRequest(request);
+
+    WriteSingleRegisterResponseParser.parse(
+      frame,
+      address,
+      value,
+    );
+  }
+
+  /**
+   * Sends a Modbus request and waits for the response with the matching
+   * transaction identifier.
    */
   private sendRequest(
     request: ModbusRequest,
@@ -165,7 +201,8 @@ export class ModbusClient {
   }
 
   /**
-   * Resolves the pending request matching the transaction ID.
+   * Resolves the pending request that belongs to the received
+   * transaction identifier.
    */
   private handleFrame(frame: ModbusTcpFrame): void {
     const pendingRequest = this.pendingRequests.get(
@@ -182,7 +219,7 @@ export class ModbusClient {
   }
 
   /**
-   * Rejects all pending requests after a connection error.
+   * Rejects all pending requests after a TCP connection error.
    */
   private handleConnectionError(error: Error): void {
     for (const pendingRequest of this.pendingRequests.values()) {
@@ -193,7 +230,7 @@ export class ModbusClient {
   }
 
   /**
-   * Rejects all pending requests if the connection closes.
+   * Rejects all pending requests when the TCP connection closes.
    */
   private handleConnectionClose(): void {
     if (this.pendingRequests.size === 0) {
