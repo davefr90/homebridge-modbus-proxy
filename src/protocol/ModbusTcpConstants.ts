@@ -19,3 +19,8 @@ export const DATA_OFFSET = 8;
  * Number of bytes located before the section counted by the MBAP length field.
  */
 export const PREFIX_SIZE = 6;
+
+/**
+ * Maximum supported Modbus TCP frame size.
+ */
+export const MAX_FRAME_SIZE = 260;
