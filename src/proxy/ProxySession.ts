@@ -164,40 +164,40 @@ export class ProxySession {
   }
 
   /**
-   * Writes data to the client socket.
-   */
-  private write(
-    buffer: Buffer,
-  ): Promise<void> {
+ * Writes data to the client socket.
+ */
+    private write(
+        buffer: Buffer,
+    ): Promise<void> {
     return new Promise<void>(
-      (
-        resolve,
-        reject,
-      ) => {
-        if (!this.isConnected) {
-          reject(
-            new Error(
-              'Proxy client socket is not connected.',
-            ),
-          );
-
-          return;
-        }
-
-        this.socket.write(
-          buffer,
-          (error) => {
-            if (error !== undefined) {
-              reject(error);
-              return;
-            }
-
-            resolve();
-          },
+    (
+      resolve,
+      reject,
+    ) => {
+      if (!this.isConnected) {
+        reject(
+          new Error(
+            'Proxy client socket is not connected.',
+          ),
         );
+
+        return;
+      }
+
+      this.socket.write(
+        buffer,
+        (error) => {
+          if (error != null) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+         },
+         );
       },
     );
-  }
+ }
 
   /**
    * Handles errors emitted by the client socket.
