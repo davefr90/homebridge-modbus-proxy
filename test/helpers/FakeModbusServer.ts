@@ -412,7 +412,7 @@ export class FakeModbusServer {
     }
   }
 
-  /**
+    /**
    * Handles Function Code 0x01:
    * Read Coils.
    */
@@ -420,76 +420,12 @@ export class FakeModbusServer {
     socket: Socket,
     frame: ModbusTcpFrame,
   ): void {
-    const startAddress =
-      frame.data.readUInt16BE(0);
-
-    const quantity =
-      frame.data.readUInt16BE(2);
-
-    if (
-      !this.isValidRegisterRange(
-        startAddress,
-        quantity,
-      )
-    ) {
-      this.sendException(
-        socket,
-        frame,
-        ModbusExceptionCode.IllegalDataAddress,
-      );
-
-      return;
-    }
-
-    const byteCount =
-      Math.ceil(quantity / 8);
-
-    const responseData =
-      Buffer.alloc(
-        1 + byteCount,
-      );
-
-    responseData.writeUInt8(
-      byteCount,
-      0,
-    );
-
-    for (
-      let index = 0;
-      index < quantity;
-      index++
-    ) {
-      const value =
-        this.coils.readCoil(
-          startAddress + index,
-        );
-
-      if (!value) {
-        continue;
-      }
-
-      const byteIndex =
-        1 + Math.floor(index / 8);
-
-      const bitIndex =
-        index % 8;
-
-      responseData[byteIndex] |=
-        1 << bitIndex;
-    }
-
-    const responseFrame =
-      new ModbusTcpFrame(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.ReadCoils,
-        responseData,
-      );
-
-    this.sendFrame(
+    this.handleBitRead(
       socket,
-      responseFrame,
+      frame,
+      ModbusFunctionCode.ReadCoils,
+      (address) =>
+        this.coils.readCoil(address),
     );
   }
 
@@ -501,6 +437,64 @@ export class FakeModbusServer {
     socket: Socket,
     frame: ModbusTcpFrame,
   ): void {
+    this.handleBitRead(
+      socket,
+      frame,
+      ModbusFunctionCode.ReadDiscreteInputs,
+      (address) =>
+        this.discreteInputs.readInput(address),
+    );
+  }
+
+  /**
+   * Handles Function Code 0x03:
+   * Read Holding Registers.
+   */
+  private handleReadHoldingRegisters(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+  ): void {
+    this.handleRegisterRead(
+      socket,
+      frame,
+      ModbusFunctionCode.ReadHoldingRegisters,
+      (address) =>
+        this.registers.readHoldingRegister(
+          address,
+        ),
+    );
+  }
+
+  /**
+   * Handles Function Code 0x04:
+   * Read Input Registers.
+   */
+  private handleReadInputRegisters(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+  ): void {
+    this.handleRegisterRead(
+      socket,
+      frame,
+      ModbusFunctionCode.ReadInputRegisters,
+      (address) =>
+        this.registers.readInputRegister(
+          address,
+        ),
+    );
+  }
+
+  /**
+   * Handles a Modbus function that reads packed bit values.
+   */
+  private handleBitRead(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+    functionCode: ModbusFunctionCode,
+    readValue: (
+      address: number,
+    ) => boolean,
+  ): void {
     const startAddress =
       frame.data.readUInt16BE(0);
 
@@ -522,15 +516,110 @@ export class FakeModbusServer {
       return;
     }
 
+    const responseFrame =
+      this.createBitReadResponse(
+        frame.transactionId,
+        frame.protocolId,
+        frame.unitId,
+        functionCode,
+        startAddress,
+        quantity,
+        readValue,
+      );
+
+    this.sendFrame(
+      socket,
+      responseFrame,
+    );
+  }
+
+  /**
+   * Handles a Modbus function that reads 16-bit registers.
+   */
+  private handleRegisterRead(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+    functionCode: ModbusFunctionCode,
+    readValue: (
+      address: number,
+    ) => number,
+  ): void {
+    const startAddress =
+      frame.data.readUInt16BE(0);
+
+    const quantity =
+      frame.data.readUInt16BE(2);
+
+    if (
+      !this.isValidRegisterRange(
+        startAddress,
+        quantity,
+      )
+    ) {
+      this.sendException(
+        socket,
+        frame,
+        ModbusExceptionCode.IllegalDataAddress,
+      );
+
+      return;
+    }
+
+    const values: number[] = [];
+
+    for (
+      let index = 0;
+      index < quantity;
+      index++
+    ) {
+      values.push(
+        readValue(
+          startAddress + index,
+        ),
+      );
+    }
+
+    const responseFrame =
+      this.createReadResponse(
+        frame.transactionId,
+        frame.protocolId,
+        frame.unitId,
+        functionCode,
+        values,
+      );
+
+    this.sendFrame(
+      socket,
+      responseFrame,
+    );
+  }
+
+  /**
+   * Creates a response containing packed bit values.
+   *
+   * Modbus packs the first requested value into bit zero
+   * of the first data byte.
+   */
+  private createBitReadResponse(
+    transactionId: number,
+    protocolId: number,
+    unitId: number,
+    functionCode: ModbusFunctionCode,
+    startAddress: number,
+    quantity: number,
+    readValue: (
+      address: number,
+    ) => boolean,
+  ): ModbusTcpFrame {
     const byteCount =
       Math.ceil(quantity / 8);
 
-    const responseData =
+    const data =
       Buffer.alloc(
         1 + byteCount,
       );
 
-    responseData.writeUInt8(
+    data.writeUInt8(
       byteCount,
       0,
     );
@@ -541,7 +630,7 @@ export class FakeModbusServer {
       index++
     ) {
       const value =
-        this.discreteInputs.readInput(
+        readValue(
           startAddress + index,
         );
 
@@ -555,138 +644,16 @@ export class FakeModbusServer {
       const bitIndex =
         index % 8;
 
-      responseData[byteIndex] |=
+      data[byteIndex] |=
         1 << bitIndex;
     }
 
-    const responseFrame =
-      new ModbusTcpFrame(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.ReadDiscreteInputs,
-        responseData,
-      );
-
-    this.sendFrame(
-      socket,
-      responseFrame,
-    );
-  }
-
-  /**
-   * Handles Function Code 0x03:
-   * Read Holding Registers.
-   */
-  private handleReadHoldingRegisters(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    const startAddress =
-      frame.data.readUInt16BE(0);
-
-    const quantity =
-      frame.data.readUInt16BE(2);
-
-    if (
-      !this.isValidRegisterRange(
-        startAddress,
-        quantity,
-      )
-    ) {
-      this.sendException(
-        socket,
-        frame,
-        ModbusExceptionCode.IllegalDataAddress,
-      );
-
-      return;
-    }
-
-    const values: number[] = [];
-
-    for (
-      let index = 0;
-      index < quantity;
-      index++
-    ) {
-      values.push(
-        this.registers.readHoldingRegister(
-          startAddress + index,
-        ),
-      );
-    }
-
-    const responseFrame =
-      this.createReadResponse(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.ReadHoldingRegisters,
-        values,
-      );
-
-    this.sendFrame(
-      socket,
-      responseFrame,
-    );
-  }
-
-  /**
-   * Handles Function Code 0x04:
-   * Read Input Registers.
-   */
-  private handleReadInputRegisters(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    const startAddress =
-      frame.data.readUInt16BE(0);
-
-    const quantity =
-      frame.data.readUInt16BE(2);
-
-    if (
-      !this.isValidRegisterRange(
-        startAddress,
-        quantity,
-      )
-    ) {
-      this.sendException(
-        socket,
-        frame,
-        ModbusExceptionCode.IllegalDataAddress,
-      );
-
-      return;
-    }
-
-    const values: number[] = [];
-
-    for (
-      let index = 0;
-      index < quantity;
-      index++
-    ) {
-      values.push(
-        this.registers.readInputRegister(
-          startAddress + index,
-        ),
-      );
-    }
-
-    const responseFrame =
-      this.createReadResponse(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.ReadInputRegisters,
-        values,
-      );
-
-    this.sendFrame(
-      socket,
-      responseFrame,
+    return new ModbusTcpFrame(
+      transactionId,
+      protocolId,
+      unitId,
+      functionCode,
+      data,
     );
   }
 
