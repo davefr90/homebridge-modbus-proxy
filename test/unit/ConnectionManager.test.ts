@@ -1,8 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
+import { ModbusClient } from '../../src/client/ModbusClient.js';
 import { ConnectionManager } from '../../src/proxy/ConnectionManager.js';
-import { ManagedDeviceRuntime } from '../../src/proxy/ManagedDeviceRuntime.js';
 import type { ManagedDevice } from '../../src/proxy/ManagedDevice.js';
+import { ManagedDeviceRuntime } from '../../src/proxy/ManagedDeviceRuntime.js';
 
 describe('ConnectionManager', () => {
   const device: ManagedDevice = {
@@ -13,54 +20,170 @@ describe('ConnectionManager', () => {
     unitId: 1,
   };
 
-  function createManager(): ConnectionManager {
-    return new ConnectionManager(
-      new ManagedDeviceRuntime(device),
-    );
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function createManager(): {
+    manager: ConnectionManager;
+    client: ModbusClient;
+  } {
+    const client =
+      new ModbusClient(
+        device.host,
+        device.port,
+      );
+
+    const manager =
+      new ConnectionManager(
+        new ManagedDeviceRuntime(device),
+        client,
+      );
+
+    return {
+      manager,
+      client,
+    };
   }
 
   it('returns its runtime', () => {
-    const manager = createManager();
+    const { manager } =
+      createManager();
 
-    expect(manager.getRuntime()).toBeInstanceOf(
+    expect(
+      manager.getRuntime(),
+    ).toBeInstanceOf(
       ManagedDeviceRuntime,
     );
   });
 
+  it('returns its Modbus client', () => {
+    const {
+      manager,
+      client,
+    } = createManager();
+
+    expect(
+      manager.getClient(),
+    ).toBe(client);
+  });
+
   it('starts disconnected', () => {
-    const manager = createManager();
+    const { manager } =
+      createManager();
 
-    expect(manager.isConnected()).toBe(false);
+    expect(
+      manager.isConnected(),
+    ).toBe(false);
   });
 
-  it('connect marks runtime as connected', () => {
-    const manager = createManager();
+  it('connects the Modbus client and updates the runtime', async () => {
+    const {
+      manager,
+      client,
+    } = createManager();
 
-    manager.connect();
+    const connectSpy =
+      vi.spyOn(
+        client,
+        'connect',
+      ).mockResolvedValue();
 
-    expect(manager.isConnected()).toBe(true);
-    expect(manager.getRuntime().lastSeen).toBeInstanceOf(
-      Date,
-    );
-    expect(manager.getRuntime().lastError).toBeUndefined();
+    await manager.connect();
+
+    expect(connectSpy).toHaveBeenCalledOnce();
+
+    expect(
+      manager.isConnected(),
+    ).toBe(true);
+
+    expect(
+      manager.getRuntime().lastSeen,
+    ).toBeInstanceOf(Date);
+
+    expect(
+      manager.getRuntime().lastError,
+    ).toBeUndefined();
   });
 
-  it('disconnect marks runtime as disconnected', () => {
-    const manager = createManager();
+  it('stores a connection error and keeps the runtime disconnected', async () => {
+    const {
+      manager,
+      client,
+    } = createManager();
 
-    manager.connect();
+    const error =
+      new Error(
+        'Connection failed',
+      );
+
+    vi.spyOn(
+      client,
+      'connect',
+    ).mockRejectedValue(error);
+
+    await expect(
+      manager.connect(),
+    ).rejects.toBe(error);
+
+    expect(
+      manager.isConnected(),
+    ).toBe(false);
+
+    expect(
+      manager.getRuntime().lastError,
+    ).toBe(error);
+  });
+
+  it('disconnects the Modbus client and updates the runtime', async () => {
+    const {
+      manager,
+      client,
+    } = createManager();
+
+    vi.spyOn(
+      client,
+      'connect',
+    ).mockResolvedValue();
+
+    const disconnectSpy =
+      vi.spyOn(
+        client,
+        'disconnect',
+      ).mockImplementation(() => {});
+
+    await manager.connect();
     manager.disconnect();
 
-    expect(manager.isConnected()).toBe(false);
+    expect(
+      disconnectSpy,
+    ).toHaveBeenCalledOnce();
+
+    expect(
+      manager.isConnected(),
+    ).toBe(false);
   });
 
-  it('disconnect stores the last error', () => {
-    const manager = createManager();
+  it('stores the last disconnection error', () => {
+    const {
+      manager,
+      client,
+    } = createManager();
 
-    const error = new Error('Connection lost');
+    vi.spyOn(
+      client,
+      'disconnect',
+    ).mockImplementation(() => {});
+
+    const error =
+      new Error(
+        'Connection lost',
+      );
 
     manager.disconnect(error);
 
-    expect(manager.getRuntime().lastError).toBe(error);
+    expect(
+      manager.getRuntime().lastError,
+    ).toBe(error);
   });
 });

@@ -5,12 +5,13 @@ import net, {
 
 import { ModbusExceptionCode } from '../../src/protocol/ModbusExceptionCode.js';
 import { ModbusFunctionCode } from '../../src/protocol/ModbusFunctionCode.js';
-import { ModbusTcpDecoder } from '../../src/protocol/ModbusTcpDecoder.js';
+import { ModbusTcpFrameParser } from '../../src/protocol/ModbusTcpFrameParser.js';
 import { ModbusTcpEncoder } from '../../src/protocol/ModbusTcpEncoder.js';
 import { ModbusTcpFrame } from '../../src/protocol/ModbusTcpFrame.js';
 import { CoilBank } from './CoilBank.js';
 import { DiscreteInputBank } from './DiscreteInputBank.js';
 import { RegisterBank } from './RegisterBank.js';
+
 
 /**
  * Fake Modbus TCP server used for integration tests.
@@ -70,6 +71,12 @@ export class FakeModbusServer {
    * Last successfully decoded Modbus TCP frame.
    */
   private lastFrame?: ModbusTcpFrame;
+
+  /**
+ * Incremental Modbus TCP stream parser.
+ */
+  private readonly frameParser =
+  new ModbusTcpFrameParser();
 
   /**
    * Returns the TCP port on which the server is listening.
@@ -223,6 +230,7 @@ export class FakeModbusServer {
 
     this.server = undefined;
     this.listeningPort = 0;
+    this.frameParser.reset();
     this.lastFrame = undefined;
 
     /*
@@ -298,16 +306,17 @@ export class FakeModbusServer {
   }
 
   /**
-   * Decodes incoming TCP data as a Modbus TCP frame.
-   */
+ * Decodes incoming TCP stream data.
+ */
   private handleData(
-    socket: Socket,
-    data: Buffer,
+  socket: Socket,
+  data: Buffer,
   ): void {
-    try {
-      const frame =
-        ModbusTcpDecoder.decode(data);
+  try {
+    const frames =
+      this.frameParser.push(data);
 
+    for (const frame of frames) {
       /*
        * Store the frame for tests that inspect the
        * received request.
@@ -318,14 +327,15 @@ export class FakeModbusServer {
         socket,
         frame,
       );
+    }
     } catch {
-      /*
-       * Malformed or incomplete frames are ignored for now.
-       *
-       * TCP stream buffering will be implemented separately.
-       * One TCP data event is not guaranteed to contain
-       * exactly one complete Modbus TCP frame.
-       */
+    /*
+     * Invalid stream.
+     *
+     * Reset the parser so the next request starts
+     * with a clean buffer.
+     */
+    this.frameParser.reset();
     }
   }
 

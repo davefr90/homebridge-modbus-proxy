@@ -332,14 +332,80 @@ export class ModbusClient {
   }
 
     /**
-   * Sends a Modbus request and waits for the response
-   * with the matching transaction identifier.
+   * Executes a raw Modbus TCP frame.
+   *
+   * The incoming transaction identifier is preserved for
+   * the returned response. Internally, the client uses its
+   * own transaction identifier to avoid collisions between
+   * multiple proxy clients.
+   *
+   * Modbus exception responses are returned unchanged so
+   * that a proxy client receives the original protocol
+   * response from the target device.
+   */
+  public async executeFrame(
+    frame: ModbusTcpFrame,
+  ): Promise<ModbusTcpFrame> {
+    const originalTransactionId =
+      frame.transactionId;
+
+    const internalTransactionId =
+      this.transactionManager.next();
+
+    const outboundFrame =
+      new ModbusTcpFrame(
+        internalTransactionId,
+        frame.protocolId,
+        frame.unitId,
+        frame.functionCode,
+        frame.data,
+      );
+
+    const response =
+      await this.sendFrame(
+        outboundFrame,
+        true,
+      );
+
+    return new ModbusTcpFrame(
+      originalTransactionId,
+      response.protocolId,
+      response.unitId,
+      response.functionCode,
+      response.data,
+    );
+  }
+      /**
+   * Maps and sends a high-level Modbus request.
    */
   private sendRequest(
     request: ModbusRequest,
   ): Promise<ModbusTcpFrame> {
     const transactionId =
       this.transactionManager.next();
+
+    const frame =
+      ModbusRequestMapper.toFrame(
+        transactionId,
+        request,
+      );
+
+    return this.sendFrame(
+      frame,
+      false,
+    );
+  }
+
+  /**
+   * Sends a Modbus TCP frame and waits for the response
+   * with the matching internal transaction identifier.
+   */
+  private sendFrame(
+    frame: ModbusTcpFrame,
+    resolveExceptionResponses: boolean,
+  ): Promise<ModbusTcpFrame> {
+    const transactionId =
+      frame.transactionId;
 
     return new Promise<ModbusTcpFrame>(
       (
@@ -351,6 +417,7 @@ export class ModbusClient {
             transactionId,
             resolve,
             reject,
+            resolveExceptionResponses,
           );
 
         this.pendingRequests.set(
@@ -359,12 +426,6 @@ export class ModbusClient {
         );
 
         try {
-          const frame =
-            ModbusRequestMapper.toFrame(
-              transactionId,
-              request,
-            );
-
           const buffer =
             ModbusTcpEncoder.encode(frame);
 
@@ -448,10 +509,13 @@ export class ModbusClient {
      * 0x06 becomes 0x86
      * 0x10 becomes 0x90
      */
-    const isExceptionResponse =
+        const isExceptionResponse =
       (frame.functionCode & 0x80) !== 0;
 
-    if (!isExceptionResponse) {
+    if (
+      !isExceptionResponse ||
+      pendingRequest.resolveExceptionResponses
+    ) {
       pendingRequest.resolve(frame);
       return;
     }
