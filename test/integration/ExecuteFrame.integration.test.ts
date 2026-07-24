@@ -236,6 +236,55 @@ function createReadRegisterData(
   return data;
 }
 
+/**
+ * Reads one holding register through a proxy client.
+ */
+async function readHoldingRegister(
+  socket: Socket,
+  transactionId: number,
+  address: number,
+): Promise<number> {
+  const request =
+    new ModbusTcpFrame(
+      transactionId,
+      0,
+      1,
+      ModbusFunctionCode.ReadHoldingRegisters,
+      createReadRegisterData(
+        address,
+      ),
+    );
+
+  const responsePromise =
+    receiveFrame(socket);
+
+  await sendFrame(
+    socket,
+    request,
+  );
+
+  const response =
+    await responsePromise;
+
+  expect(
+    response.transactionId,
+  ).toBe(transactionId);
+
+  expect(
+    response.functionCode,
+  ).toBe(
+    ModbusFunctionCode.ReadHoldingRegisters,
+  );
+
+  expect(
+    response.data.length,
+  ).toBe(3);
+
+  return response.data.readUInt16BE(
+    1,
+  );
+}
+
 describe('ModbusClient executeFrame', () => {
   let server:
     | FakeModbusServer
@@ -616,5 +665,140 @@ describe('ModbusClient executeFrame', () => {
         0x2e,
       ]),
     );
+  });
+
+  it('handles five clients with five requests each', async () => {
+    server = new FakeModbusServer();
+
+    await server.start();
+
+    const clientCount = 5;
+    const requestsPerClient = 5;
+
+    for (
+      let clientIndex = 0;
+      clientIndex < clientCount;
+      clientIndex++
+    ) {
+      const baseAddress =
+        100 + clientIndex * 100;
+
+      const baseValue =
+        1000 + clientIndex * 100;
+
+      for (
+        let requestIndex = 0;
+        requestIndex < requestsPerClient;
+        requestIndex++
+      ) {
+        server.registers.writeHoldingRegister(
+          baseAddress + requestIndex,
+          baseValue + requestIndex,
+        );
+      }
+    }
+
+    const device: ManagedDevice = {
+      id: 'load-test-device',
+      name: 'Load Test Device',
+      host: '127.0.0.1',
+      port: server.port,
+      unitId: 1,
+    };
+
+    client = new ModbusClient(
+      device.host,
+      device.port,
+    );
+
+    const connectionManager =
+      new ConnectionManager(
+        new ManagedDeviceRuntime(device),
+        client,
+      );
+
+    await connectionManager.connect();
+
+    proxyServer =
+      new ProxyServer(
+        connectionManager,
+      );
+
+    await proxyServer.start();
+
+    const proxyPort =
+      proxyServer.port;
+
+    const sockets =
+      await Promise.all(
+        Array.from(
+          {
+            length: clientCount,
+          },
+          () =>
+            connectTcpClient(
+              proxyPort,
+            ),
+        ),
+      );
+
+    proxyClients.push(...sockets);
+
+    const clientTasks: Promise<void>[] = [];
+
+for (
+  let clientIndex = 0;
+  clientIndex < clientCount;
+  clientIndex++
+) {
+  const socket =
+    sockets[clientIndex];
+
+  if (socket === undefined) {
+    throw new Error(
+      `Missing proxy socket for client ${clientIndex}.`,
+    );
+  }
+
+  clientTasks.push(
+    (async () => {
+      const baseAddress =
+        100 + clientIndex * 100;
+
+      const baseValue =
+        1000 + clientIndex * 100;
+
+      for (
+        let requestIndex = 0;
+        requestIndex < requestsPerClient;
+        requestIndex++
+      ) {
+        const transactionId =
+          clientIndex * 100 + requestIndex;
+
+        const address =
+          baseAddress + requestIndex;
+
+        const expectedValue =
+          baseValue + requestIndex;
+
+        const value =
+          await readHoldingRegister(
+            socket,
+            transactionId,
+            address,
+          );
+
+        expect(value).toBe(
+          expectedValue,
+        );
+      }
+    })(),
+  );
+}
+
+        await Promise.all(
+            clientTasks,
+        );
   });
 });
