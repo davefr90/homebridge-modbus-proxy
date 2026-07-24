@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
+import { ReadInputRegistersResponseParser } from '../../src/client/responses/ReadInputRegistersResponseParser.js';
 import { ModbusProtocolError } from '../../src/exceptions/ModbusProtocolError.js';
 import { ModbusFunctionCode } from '../../src/protocol/ModbusFunctionCode.js';
 import { ModbusTcpFrame } from '../../src/protocol/ModbusTcpFrame.js';
-import { ReadInputRegistersResponseParser } from '../../src/client/responses/ReadInputRegistersResponseParser.js';
 
 describe('ReadInputRegistersResponseParser', () => {
   function createFrame(values: number[]): ModbusTcpFrame {
-    const data = Buffer.alloc(1 + (values.length * 2));
+    const data = Buffer.alloc(
+      1 + (values.length * 2),
+    );
 
-    data.writeUInt8(values.length * 2, 0);
+    data.writeUInt8(
+      values.length * 2,
+      0,
+    );
 
     values.forEach((value, index) => {
       data.writeUInt16BE(
@@ -70,18 +75,24 @@ describe('ReadInputRegistersResponseParser', () => {
   });
 
   it('rejects an invalid function code', () => {
-    const frame = createFrame([
+    const validFrame = createFrame([
       1,
       2,
       3,
     ]);
 
-    frame.functionCode =
-      ModbusFunctionCode.ReadHoldingRegisters;
+    const frameWithInvalidFunctionCode =
+      new ModbusTcpFrame(
+        validFrame.transactionId,
+        validFrame.protocolId,
+        validFrame.unitId,
+        ModbusFunctionCode.ReadHoldingRegisters,
+        validFrame.data,
+      );
 
     expect(() =>
       ReadInputRegistersResponseParser.parse(
-        frame,
+        frameWithInvalidFunctionCode,
         3,
       ),
     ).toThrow(ModbusProtocolError);

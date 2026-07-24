@@ -247,11 +247,16 @@ export class FakeModbusServer {
     );
 
     socket.on(
-      'data',
-      (data) => {
-        this.handleData(
-          socket,
-          data,
+     'data',
+     (data) => {
+         const buffer =
+            typeof data === 'string'
+              ? Buffer.from(data)
+              : Buffer.from(data);
+
+         this.handleData(
+            socket,
+            buffer,
         );
       },
     );
@@ -297,33 +302,186 @@ export class FakeModbusServer {
     frame: ModbusTcpFrame,
   ): void {
     switch (frame.functionCode) {
-      case ModbusFunctionCode.ReadHoldingRegisters:
+        case ModbusFunctionCode.ReadHoldingRegisters:
         this.handleReadHoldingRegisters(
-          socket,
-          frame,
+        socket,
+        frame,
         );
 
-        break;
+    break;
 
-      case ModbusFunctionCode.ReadInputRegisters:
-        this.handleReadInputRegisters(
-          socket,
-          frame,
+    case ModbusFunctionCode.ReadInputRegisters:
+    this.handleReadInputRegisters(
+        socket,
+        frame,
         );
 
+    break;
+
+    case ModbusFunctionCode.WriteSingleRegister:
+    this.handleWriteSingleRegister(
+          socket,
+          frame,
+          );
+
         break;
 
-      default:
-        /*
-         * Additional function codes will be added later:
-         *
-         * 0x06 Write Single Register
-         * 0x10 Write Multiple Registers
-         */
-        break;
+    case ModbusFunctionCode.WriteMultipleRegisters:
+      this.handleWriteMultipleRegisters(
+        socket,
+        frame,
+      );
+
+      break;
+
+    default:
+      break;
     }
   }
 
+  /**
+   * Handles Function Code 0x10:
+   * Write Multiple Registers.
+   *
+   * Request data:
+   *
+   * Byte 0-1: Start address
+   * Byte 2-3: Register quantity
+   * Byte 4:   Byte count
+   * Byte 5-n: Register values
+   */
+  private handleWriteMultipleRegisters(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+  ): void {
+    const startAddress =
+      frame.data.readUInt16BE(0);
+
+    const quantity =
+      frame.data.readUInt16BE(2);
+
+    /*
+     * Byte 4 contains the byte count.
+     *
+     * We already know the quantity, therefore
+     * we don't need the value here.
+     */
+
+    for (
+      let index = 0;
+      index < quantity;
+      index++
+    ) {
+      const value =
+        frame.data.readUInt16BE(
+          5 + (index * 2),
+        );
+
+      this.registers.writeHoldingRegister(
+        startAddress + index,
+        value,
+      );
+    }
+
+    /*
+     * A successful response consists only of:
+     *
+     * Start Address
+     * Quantity
+     */
+
+    const responseData =
+  Buffer.alloc(4);
+
+responseData.writeUInt16BE(
+  startAddress,
+  0,
+);
+
+responseData.writeUInt16BE(
+  quantity,
+  2,
+);
+
+const responseFrame =
+  new ModbusTcpFrame(
+    frame.transactionId,
+    frame.protocolId,
+    frame.unitId,
+    ModbusFunctionCode.WriteMultipleRegisters,
+    responseData,
+  );
+this.sendFrame(
+  socket,
+  responseFrame,
+);
+  }
+
+  private createReadResponse(
+  transactionId: number,
+  protocolId: number,
+  unitId: number,
+  functionCode: ModbusFunctionCode,
+  values: number[],
+): ModbusTcpFrame {
+  const data = Buffer.alloc(
+    1 + (values.length * 2),
+  );
+
+  data.writeUInt8(
+    values.length * 2,
+    0,
+  );
+
+  values.forEach(
+    (
+      value,
+      index,
+    ) => {
+      data.writeUInt16BE(
+        value,
+        1 + (index * 2),
+      );
+    },
+  );
+
+  return new ModbusTcpFrame(
+    transactionId,
+    protocolId,
+    unitId,
+    functionCode,
+    data,
+  );
+}
+
+  private createWriteMultipleRegistersResponse(
+  transactionId: number,
+  protocolId: number,
+  unitId: number,
+  functionCode: ModbusFunctionCode,
+  startAddress: number,
+  quantity: number,
+): ModbusTcpFrame {
+  const data = Buffer.alloc(4);
+
+  data.writeUInt16BE(
+    startAddress,
+    0,
+  );
+
+  data.writeUInt16BE(
+    quantity,
+    2,
+  );
+
+  return new ModbusTcpFrame(
+    transactionId,
+    protocolId,
+    unitId,
+    functionCode,
+    data,
+  );
+}
   /**
    * Handles Function Code 0x03:
    * Read Holding Registers.
@@ -339,80 +497,42 @@ export class FakeModbusServer {
    * Byte 1-n: Register values, two bytes per register
    */
   private handleReadHoldingRegisters(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    /*
-     * The first two request-data bytes contain the
-     * starting register address.
-     *
-     * Modbus uses Big Endian byte order.
-     */
-    const startAddress =
-      frame.data.readUInt16BE(0);
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const startAddress =
+    frame.data.readUInt16BE(0);
 
-    /*
-     * The next two request-data bytes contain the
-     * number of registers requested by the client.
-     */
-    const quantity =
-      frame.data.readUInt16BE(2);
+  const quantity =
+    frame.data.readUInt16BE(2);
 
-    /*
-     * The response-data buffer consists of:
-     *
-     * 1 byte for the byte count
-     * 2 bytes for every requested register
-     */
-    const responseData =
-      Buffer.alloc(
-        1 + quantity * 2,
-      );
+  const values: number[] = [];
 
-    /*
-     * Every Modbus register occupies two bytes.
-     *
-     * Examples:
-     *
-     * 1 register  = 2 data bytes
-     * 2 registers = 4 data bytes
-     * 3 registers = 6 data bytes
-     */
-    responseData.writeUInt8(
-      quantity * 2,
-      0,
+  for (
+    let index = 0;
+    index < quantity;
+    index++
+  ) {
+    values.push(
+      this.registers.readHoldingRegister(
+        startAddress + index,
+      ),
+    );
+  }
+
+  const responseFrame =
+    this.createReadResponse(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.ReadHoldingRegisters,
+      values,
     );
 
-    /*
-     * Read all requested Holding Registers consecutively.
-     */
-    for (
-      let index = 0;
-      index < quantity;
-      index++
-    ) {
-      const registerAddress =
-        startAddress + index;
-
-      const registerValue =
-        this.registers.readHoldingRegister(
-          registerAddress,
-        );
-
-      /*
-       * Offset zero contains the byte count.
-       *
-       * The first register therefore starts at offset one.
-       * Every following register begins two bytes later.
-       */
-      const responseOffset =
-        1 + index * 2;
-
-      responseData.writeUInt16BE(
-        registerValue,
-        responseOffset,
-      );
-    }
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
 
     /*
      * The response must use the same:
@@ -426,18 +546,58 @@ export class FakeModbusServer {
      * The transaction ID allows the client to match the
      * response to its pending request.
      */
+  }
+
+  /**
+   * Handles Function Code 0x06:
+   * Write Single Register.
+   *
+   * Request data:
+   *
+   * Byte 0-1: Register address
+   * Byte 2-3: Register value
+   *
+   * The Modbus specification requires the server to
+   * return exactly the same address and value after
+   * successfully writing the register.
+   */
+  private handleWriteSingleRegister(
+    socket: Socket,
+    frame: ModbusTcpFrame,
+  ): void {
+    /*
+     * Decode the target register address.
+     */
+    const address =
+      frame.data.readUInt16BE(0);
+
+    /*
+     * Decode the register value.
+     */
+    const value =
+      frame.data.readUInt16BE(2);
+
+    /*
+     * Store the value inside the Holding Register area.
+     */
+    this.registers.writeHoldingRegister(
+      address,
+      value,
+    );
+
+    /*
+     * Echo the original request according to
+     * the Modbus specification.
+     */
     const responseFrame =
       new ModbusTcpFrame(
         frame.transactionId,
         frame.protocolId,
         frame.unitId,
-        ModbusFunctionCode.ReadHoldingRegisters,
-        responseData,
+        ModbusFunctionCode.WriteSingleRegister,
+        Buffer.from(frame.data),
       );
 
-    /*
-     * Encoding and sending are handled by a shared helper.
-     */
     this.sendFrame(
       socket,
       responseFrame,
@@ -459,108 +619,43 @@ export class FakeModbusServer {
    * Byte 1-n: Register values, two bytes per register
    */
   private handleReadInputRegisters(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    /*
-     * The request structure for Function Code 0x04 is
-     * identical to Function Code 0x03.
-     *
-     * The first two data bytes contain the starting address.
-     */
-    const startAddress =
-      frame.data.readUInt16BE(0);
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const startAddress =
+    frame.data.readUInt16BE(0);
 
-    /*
-     * The following two bytes contain the requested
-     * number of Input Registers.
-     */
-    const quantity =
-      frame.data.readUInt16BE(2);
+  const quantity =
+    frame.data.readUInt16BE(2);
 
-    /*
-     * The response contains:
-     *
-     * 1 byte byte-count field
-     * 2 bytes for every Input Register
-     */
-    const responseData =
-      Buffer.alloc(
-        1 + quantity * 2,
-      );
+  const values: number[] = [];
 
-    /*
-     * Store the number of register-data bytes.
-     *
-     * Each register contains exactly two bytes.
-     */
-    responseData.writeUInt8(
-      quantity * 2,
-      0,
-    );
-
-    /*
-     * Read the requested Input Registers consecutively.
-     */
-    for (
-      let index = 0;
-      index < quantity;
-      index++
-    ) {
-      const registerAddress =
-        startAddress + index;
-
-      /*
-       * This is the important difference from Function Code 0x03.
-       *
-       * Function Code 0x04 reads from the Input Register area,
-       * not from the Holding Register area.
-       */
-      const registerValue =
-        this.registers.readInputRegister(
-          registerAddress,
-        );
-
-      /*
-       * Offset zero contains the byte count.
-       *
-       * Register values begin at offset one and each
-       * register occupies two bytes.
-       */
-      const responseOffset =
-        1 + index * 2;
-
-      responseData.writeUInt16BE(
-        registerValue,
-        responseOffset,
-      );
-    }
-
-    /*
-     * Create the complete Modbus TCP response frame.
-     *
-     * Transaction ID, Protocol ID and Unit ID are copied
-     * from the request.
-     *
-     * The response Function Code remains 0x04.
-     */
-    const responseFrame =
-      new ModbusTcpFrame(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.ReadInputRegisters,
-        responseData,
-      );
-
-    /*
-     * Encode and send the response to the requesting client.
-     */
-    this.sendFrame(
-      socket,
-      responseFrame,
+  for (
+    let index = 0;
+    index < quantity;
+    index++
+  ) {
+    values.push(
+      this.registers.readInputRegister(
+        startAddress + index,
+      ),
     );
   }
+
+  const responseFrame =
+    this.createReadResponse(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.ReadInputRegisters,
+      values,
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
 
   /**
    * Encodes and sends a Modbus TCP frame.
