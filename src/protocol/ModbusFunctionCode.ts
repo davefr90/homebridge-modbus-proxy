@@ -5,20 +5,12 @@ export enum ModbusFunctionCode {
   /**
    * Read Holding Registers.
    */
+  ReadCoils = 0x01,
+  ReadDiscreteInputs = 0x02,
   ReadHoldingRegisters = 0x03,
-
-  /**
-   * Read Input Registers.
-   */
   ReadInputRegisters = 0x04,
-
-  /**
-   * Write Single Register.
-   */
+  WriteSingleCoil = 0x05,
   WriteSingleRegister = 0x06,
-
-  /**
-   * Write Multiple Registers.
-   */
+  WriteMultipleCoils = 0x0F,
   WriteMultipleRegisters = 0x10,
 }

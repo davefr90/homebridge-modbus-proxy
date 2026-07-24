@@ -5,6 +5,9 @@ import { ModbusTcpDecoder } from '../../src/protocol/ModbusTcpDecoder.js';
 import { ModbusTcpEncoder } from '../../src/protocol/ModbusTcpEncoder.js';
 import { ModbusTcpFrame } from '../../src/protocol/ModbusTcpFrame.js';
 import { RegisterBank } from './RegisterBank.js';
+import { ModbusExceptionCode } from '../../src/protocol/ModbusExceptionCode.js';
+import { CoilBank } from './CoilBank.js';
+import { DiscreteInputBank } from './DiscreteInputBank.js';
 
 /**
  * Fake Modbus TCP server used for integration tests.
@@ -21,11 +24,18 @@ export class FakeModbusServer {
   /**
    * Register storage used by the fake server.
    */
-  public readonly registers = new RegisterBank();
+public readonly registers =
+  new RegisterBank();
 
-  /**
-   * Node.js TCP server instance.
-   */
+public readonly coils =
+  new CoilBank();
+
+public readonly discreteInputs =
+  new DiscreteInputBank();
+
+/**
+ * Node.js TCP server instance.
+ */
   private server?: Server;
 
   /**
@@ -185,13 +195,14 @@ export class FakeModbusServer {
 
     const server = this.server;
 
-    /*
-     * Reset the server state immediately.
-     */
+    this.registers.clear();
+    this.coils.clear();
+    this.discreteInputs.clear();
     this.server = undefined;
     this.listeningPort = 0;
     this.lastFrame = undefined;
     this.registers.clear();
+    this.coils.clear();
 
     /*
      * Calling stop() while the server is already stopped
@@ -297,34 +308,61 @@ export class FakeModbusServer {
   /**
    * Routes a decoded Modbus request to its function handler.
    */
-  private processFrame(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    switch (frame.functionCode) {
-        case ModbusFunctionCode.ReadHoldingRegisters:
-        this.handleReadHoldingRegisters(
+/**
+ * Routes a decoded Modbus request to its function handler.
+ */
+private processFrame(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  switch (frame.functionCode) {
+    case ModbusFunctionCode.ReadCoils:
+      this.handleReadCoils(
         socket,
         frame,
-        );
+      );
 
-    break;
+      break;
+
+    case ModbusFunctionCode.ReadDiscreteInputs:
+      this.handleReadDiscreteInputs(
+        socket,
+        frame,
+      );
+
+      break;
+
+    case ModbusFunctionCode.ReadHoldingRegisters:
+      this.handleReadHoldingRegisters(
+        socket,
+        frame,
+      );
+
+      break;
 
     case ModbusFunctionCode.ReadInputRegisters:
-    this.handleReadInputRegisters(
+      this.handleReadInputRegisters(
         socket,
         frame,
-        );
+      );
 
-    break;
+      break;
+
+    case ModbusFunctionCode.WriteSingleCoil:
+      this.handleWriteSingleCoil(
+        socket,
+        frame,
+      );
+
+      break;
 
     case ModbusFunctionCode.WriteSingleRegister:
-    this.handleWriteSingleRegister(
-          socket,
-          frame,
-          );
+      this.handleWriteSingleRegister(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
     case ModbusFunctionCode.WriteMultipleRegisters:
       this.handleWriteMultipleRegisters(
@@ -335,10 +373,195 @@ export class FakeModbusServer {
       break;
 
     default:
+      this.sendException(
+        socket,
+        frame,
+        ModbusExceptionCode.IllegalFunction,
+      );
+
       break;
-    }
+  }
+}
+  /**
+ * Handles Function Code 0x01:
+ * Read Coils.
+ *
+ * Request data:
+ *
+ * Byte 0-1: Starting address
+ * Byte 2-3: Quantity of coils
+ *
+ * Response data:
+ *
+ * Byte 0:   Number of following coil-data bytes
+ * Byte 1-n: Coil values packed into bits
+ */
+private handleReadCoils(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const startAddress =
+    frame.data.readUInt16BE(0);
+
+  const quantity =
+    frame.data.readUInt16BE(2);
+
+  if (
+    !this.isValidRegisterRange(
+      startAddress,
+      quantity,
+    )
+  ) {
+    this.sendException(
+      socket,
+      frame,
+      ModbusExceptionCode.IllegalDataAddress,
+    );
+
+    return;
   }
 
+  const byteCount =
+    Math.ceil(quantity / 8);
+
+  const responseData =
+    Buffer.alloc(
+      1 + byteCount,
+    );
+
+  responseData.writeUInt8(
+    byteCount,
+    0,
+  );
+
+  for (
+    let index = 0;
+    index < quantity;
+    index++
+  ) {
+    const value =
+      this.coils.readCoil(
+        startAddress + index,
+      );
+
+    if (!value) {
+      continue;
+    }
+
+    const byteIndex =
+      1 + Math.floor(index / 8);
+
+    const bitIndex =
+      index % 8;
+
+    responseData[byteIndex] |=
+      1 << bitIndex;
+  }
+
+  const responseFrame =
+    new ModbusTcpFrame(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.ReadCoils,
+      responseData,
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
+/**
+ * Handles Function Code 0x02:
+ * Read Discrete Inputs.
+ *
+ * Request data:
+ *
+ * Byte 0-1: Starting address
+ * Byte 2-3: Quantity of discrete inputs
+ *
+ * Response data:
+ *
+ * Byte 0:   Number of following data bytes
+ * Byte 1-n: Discrete input values packed into bits
+ */
+private handleReadDiscreteInputs(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const startAddress =
+    frame.data.readUInt16BE(0);
+
+  const quantity =
+    frame.data.readUInt16BE(2);
+
+  if (
+    !this.isValidRegisterRange(
+      startAddress,
+      quantity,
+    )
+  ) {
+    this.sendException(
+      socket,
+      frame,
+      ModbusExceptionCode.IllegalDataAddress,
+    );
+
+    return;
+  }
+
+  const byteCount =
+    Math.ceil(quantity / 8);
+
+  const responseData =
+    Buffer.alloc(
+      1 + byteCount,
+    );
+
+  responseData.writeUInt8(
+    byteCount,
+    0,
+  );
+
+  for (
+    let index = 0;
+    index < quantity;
+    index++
+  ) {
+    const value =
+      this.discreteInputs.readInput(
+        startAddress + index,
+      );
+
+    if (!value) {
+      continue;
+    }
+
+    const byteIndex =
+      1 + Math.floor(index / 8);
+
+    const bitIndex =
+      index % 8;
+
+    responseData[byteIndex] |=
+      1 << bitIndex;
+  }
+
+  const responseFrame =
+    new ModbusTcpFrame(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.ReadDiscreteInputs,
+      responseData,
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
   /**
    * Handles Function Code 0x10:
    * Write Multiple Registers.
@@ -360,6 +583,20 @@ export class FakeModbusServer {
     const quantity =
       frame.data.readUInt16BE(2);
 
+      if (
+  !this.isValidRegisterRange(
+    startAddress,
+    quantity,
+  )
+) {
+  this.sendException(
+    socket,
+    frame,
+    ModbusExceptionCode.IllegalDataAddress,
+  );
+
+  return;
+}
     /*
      * Byte 4 contains the byte count.
      *
@@ -501,12 +738,27 @@ this.sendFrame(
   frame: ModbusTcpFrame,
 ): void {
   const startAddress =
-    frame.data.readUInt16BE(0);
+  frame.data.readUInt16BE(0);
 
-  const quantity =
-    frame.data.readUInt16BE(2);
+const quantity =
+  frame.data.readUInt16BE(2);
 
-  const values: number[] = [];
+if (
+  !this.isValidRegisterRange(
+    startAddress,
+    quantity,
+  )
+) {
+  this.sendException(
+    socket,
+    frame,
+    ModbusExceptionCode.IllegalDataAddress,
+  );
+
+  return;
+}
+
+const values: number[] = [];
 
   for (
     let index = 0;
@@ -549,61 +801,128 @@ this.sendFrame(
   }
 
   /**
-   * Handles Function Code 0x06:
-   * Write Single Register.
-   *
-   * Request data:
-   *
-   * Byte 0-1: Register address
-   * Byte 2-3: Register value
-   *
-   * The Modbus specification requires the server to
-   * return exactly the same address and value after
-   * successfully writing the register.
-   */
-  private handleWriteSingleRegister(
-    socket: Socket,
-    frame: ModbusTcpFrame,
-  ): void {
-    /*
-     * Decode the target register address.
-     */
-    const address =
-      frame.data.readUInt16BE(0);
+ * Handles Function Code 0x05:
+ * Write Single Coil.
+ *
+ * Request data:
+ *
+ * Byte 0-1: Coil address
+ * Byte 2-3: Coil value
+ *
+ * A successful response echoes the original request.
+ */
+private handleWriteSingleCoil(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const address =
+    frame.data.readUInt16BE(0);
 
-    /*
-     * Decode the register value.
-     */
-    const value =
-      frame.data.readUInt16BE(2);
-
-    /*
-     * Store the value inside the Holding Register area.
-     */
-    this.registers.writeHoldingRegister(
+  if (
+    !this.isValidRegisterRange(
       address,
-      value,
-    );
-
-    /*
-     * Echo the original request according to
-     * the Modbus specification.
-     */
-    const responseFrame =
-      new ModbusTcpFrame(
-        frame.transactionId,
-        frame.protocolId,
-        frame.unitId,
-        ModbusFunctionCode.WriteSingleRegister,
-        Buffer.from(frame.data),
-      );
-
-    this.sendFrame(
+      1,
+    )
+  ) {
+    this.sendException(
       socket,
-      responseFrame,
+      frame,
+      ModbusExceptionCode.IllegalDataAddress,
     );
+
+    return;
   }
 
+  const rawValue =
+    frame.data.readUInt16BE(2);
+
+  if (
+    rawValue !== 0xff00 &&
+    rawValue !== 0x0000
+  ) {
+    this.sendException(
+      socket,
+      frame,
+      ModbusExceptionCode.IllegalDataValue,
+    );
+
+    return;
+  }
+
+  this.coils.writeCoil(
+    address,
+    rawValue === 0xff00,
+  );
+
+  const responseFrame =
+    new ModbusTcpFrame(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.WriteSingleCoil,
+      Buffer.from(frame.data),
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
+  /**
+ * Handles Function Code 0x06:
+ * Write Single Register.
+ *
+ * Request data:
+ *
+ * Byte 0-1: Register address
+ * Byte 2-3: Register value
+ *
+ * A successful response echoes the original request.
+ */
+private handleWriteSingleRegister(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const address =
+    frame.data.readUInt16BE(0);
+
+  if (
+    !this.isValidRegisterRange(
+      address,
+      1,
+    )
+  ) {
+    this.sendException(
+      socket,
+      frame,
+      ModbusExceptionCode.IllegalDataAddress,
+    );
+
+    return;
+  }
+
+  const value =
+    frame.data.readUInt16BE(2);
+
+  this.registers.writeHoldingRegister(
+    address,
+    value,
+  );
+
+  const responseFrame =
+    new ModbusTcpFrame(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.WriteSingleRegister,
+      Buffer.from(frame.data),
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
   /**
    * Handles Function Code 0x04:
    * Read Input Registers.
@@ -627,6 +946,21 @@ this.sendFrame(
 
   const quantity =
     frame.data.readUInt16BE(2);
+
+    if (
+  !this.isValidRegisterRange(
+    startAddress,
+    quantity,
+  )
+) {
+  this.sendException(
+    socket,
+    frame,
+    ModbusExceptionCode.IllegalDataAddress,
+  );
+
+  return;
+}
 
   const values: number[] = [];
 
@@ -656,7 +990,42 @@ this.sendFrame(
     responseFrame,
   );
 }
+  /**
+ * Returns whether the requested register range is valid.
+ */
+private isValidRegisterRange(
+  startAddress: number,
+  quantity: number,
+): boolean {
+  return (
+    quantity > 0 &&
+    startAddress + quantity <= 0x1000
+  );
+}
+  /**
+ * Sends a Modbus exception response.
+ */
+private sendException(
+  socket: Socket,
+  request: ModbusTcpFrame,
+  exceptionCode: ModbusExceptionCode,
+): void {
+  const responseFrame =
+    new ModbusTcpFrame(
+      request.transactionId,
+      request.protocolId,
+      request.unitId,
+      (request.functionCode | 0x80) as ModbusFunctionCode,
+      Buffer.from([
+        exceptionCode,
+      ]),
+    );
 
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
   /**
    * Encodes and sends a Modbus TCP frame.
    *
