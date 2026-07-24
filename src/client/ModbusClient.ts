@@ -65,6 +65,13 @@ export class ModbusClient {
     );
   }
 
+    /**
+   * Returns whether the TCP connection is currently open.
+   */
+  public get isConnected(): boolean {
+    return this.connection.isConnected;
+  }
+
   /**
    * Opens the TCP connection to the Modbus server.
    */
@@ -324,7 +331,7 @@ export class ModbusClient {
     );
   }
 
-  /**
+    /**
    * Sends a Modbus request and waits for the response
    * with the matching transaction identifier.
    */
@@ -361,13 +368,39 @@ export class ModbusClient {
           const buffer =
             ModbusTcpEncoder.encode(frame);
 
-          this.connection.send(buffer);
+          void this.connection
+            .send(buffer)
+            .catch((error: unknown) => {
+              /*
+               * The request may already have been completed
+               * before the send callback reports its result.
+               */
+              if (
+                this.pendingRequests.get(
+                  transactionId,
+                ) !== pendingRequest
+              ) {
+                return;
+              }
+
+              this.pendingRequests.delete(
+                transactionId,
+              );
+
+              pendingRequest.reject(
+                error instanceof Error
+                  ? error
+                  : new Error(
+                      String(error),
+                    ),
+              );
+            });
         } catch (error) {
           this.pendingRequests.delete(
             transactionId,
           );
 
-          reject(
+          pendingRequest.reject(
             error instanceof Error
               ? error
               : new Error(

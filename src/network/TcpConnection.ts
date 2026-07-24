@@ -8,14 +8,33 @@ import { ModbusTcpFrameParser } from '../protocol/ModbusTcpFrameParser.js';
  * into complete Modbus TCP frames.
  */
 export class TcpConnection {
-  private readonly socket: Socket;
-  private readonly frameParser = new ModbusTcpFrameParser();
+  private socket?: Socket;
 
-  private frameCallback?: (frame: ModbusTcpFrame) => void;
+  private readonly frameParser =
+    new ModbusTcpFrameParser();
 
+  private frameCallback?: (
+    frame: ModbusTcpFrame,
+  ) => void;
+
+  private dataCallback?: (
+    data: Buffer | string,
+  ) => void;
+
+  private errorCallback?: (
+    error: Error,
+  ) => void;
+
+  private closeCallback?: () => void;
+
+  /**
+   * Handles incoming TCP data.
+   */
   private readonly handleData = (
     data: Buffer | string,
   ): void => {
+    this.dataCallback?.(data);
+
     const chunk = Buffer.isBuffer(data)
       ? data
       : Buffer.from(data);
@@ -31,16 +50,28 @@ export class TcpConnection {
     }
   };
 
-  constructor() {
-    this.socket = new Socket();
-    this.socket.on('data', this.handleData);
-  }
+  /**
+   * Handles socket errors.
+   */
+  private readonly handleError = (
+    error: Error,
+  ): void => {
+    this.errorCallback?.(error);
+  };
+
+  /**
+   * Handles a closed socket.
+   */
+  private readonly handleClose = (): void => {
+    this.closeCallback?.();
+  };
 
   /**
    * Returns whether the TCP socket is currently connected.
    */
   public get isConnected(): boolean {
     return (
+      this.socket !== undefined &&
       !this.socket.destroyed &&
       this.socket.readyState === 'open'
     );
@@ -49,25 +80,54 @@ export class TcpConnection {
   /**
    * Opens a TCP connection to the specified host and port.
    */
-  public connect(host: string, port: number): Promise<void> {
+  public connect(
+    host: string,
+    port: number,
+  ): Promise<void> {
+    if (this.isConnected) {
+      return Promise.resolve();
+    }
+
+    this.destroySocket();
+    this.frameParser.reset();
+
+    const socket = new Socket();
+
+    this.socket = socket;
+
+    socket.on('data', this.handleData);
+    socket.on('error', this.handleError);
+    socket.on('close', this.handleClose);
+
     return new Promise((resolve, reject) => {
       const handleConnect = (): void => {
-        this.socket.removeListener('error', handleError);
+        socket.removeListener(
+          'error',
+          handleConnectionError,
+        );
+
         resolve();
       };
 
-      const handleError = (error: Error): void => {
-        this.socket.removeListener(
+      const handleConnectionError = (
+        error: Error,
+      ): void => {
+        socket.removeListener(
           'connect',
           handleConnect,
         );
 
+        this.destroySocket();
         reject(error);
       };
 
-      this.socket.once('connect', handleConnect);
-      this.socket.once('error', handleError);
-      this.socket.connect(port, host);
+      socket.once('connect', handleConnect);
+      socket.once(
+        'error',
+        handleConnectionError,
+      );
+
+      socket.connect(port, host);
     });
   }
 
@@ -76,14 +136,21 @@ export class TcpConnection {
    */
   public send(data: Buffer): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.isConnected) {
+      const socket = this.socket;
+
+      if (
+        socket === undefined ||
+        !this.isConnected
+      ) {
         reject(
-          new Error('TCP socket is not connected'),
+          new Error(
+            'TCP socket is not connected',
+          ),
         );
         return;
       }
 
-      this.socket.write(data, error => {
+      socket.write(data, error => {
         if (error) {
           reject(error);
           return;
@@ -98,16 +165,20 @@ export class TcpConnection {
    * Registers a callback for incoming raw TCP data.
    */
   public onData(
-    callback: (data: Buffer | string) => void,
+    callback: (
+      data: Buffer | string,
+    ) => void,
   ): void {
-    this.socket.on('data', callback);
+    this.dataCallback = callback;
   }
 
   /**
    * Registers a callback for complete Modbus TCP frames.
    */
   public onFrame(
-    callback: (frame: ModbusTcpFrame) => void,
+    callback: (
+      frame: ModbusTcpFrame,
+    ) => void,
   ): void {
     this.frameCallback = callback;
   }
@@ -116,16 +187,20 @@ export class TcpConnection {
    * Registers a callback for TCP connection errors.
    */
   public onError(
-    callback: (error: Error) => void,
+    callback: (
+      error: Error,
+    ) => void,
   ): void {
-    this.socket.on('error', callback);
+    this.errorCallback = callback;
   }
 
   /**
    * Registers a callback for a closed TCP connection.
    */
-  public onClose(callback: () => void): void {
-    this.socket.on('close', callback);
+  public onClose(
+    callback: () => void,
+  ): void {
+    this.closeCallback = callback;
   }
 
   /**
@@ -133,12 +208,38 @@ export class TcpConnection {
    */
   public disconnect(): void {
     this.frameParser.reset();
-    this.frameCallback = undefined;
+    this.destroySocket();
+  }
 
-    if (this.socket.destroyed) {
+  /**
+   * Removes listeners and destroys the current socket.
+   */
+  private destroySocket(): void {
+    const socket = this.socket;
+
+    if (socket === undefined) {
       return;
     }
 
-    this.socket.destroy();
+    socket.removeListener(
+      'data',
+      this.handleData,
+    );
+
+    socket.removeListener(
+      'error',
+      this.handleError,
+    );
+
+    socket.removeListener(
+      'close',
+      this.handleClose,
+    );
+
+    if (!socket.destroyed) {
+      socket.destroy();
+    }
+
+    this.socket = undefined;
   }
 }
