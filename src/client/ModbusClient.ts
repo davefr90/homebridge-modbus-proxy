@@ -10,6 +10,7 @@ import { ReadCoilsRequest } from './requests/ReadCoilsRequest.js';
 import { ReadHoldingRegistersRequest } from './requests/ReadHoldingRegistersRequest.js';
 import { ReadInputRegistersRequest } from './requests/ReadInputRegistersRequest.js';
 import { WriteMultipleRegistersRequest } from './requests/WriteMultipleRegistersRequest.js';
+import { WriteMultipleCoilsRequest } from './requests/WriteMultipleCoilsRequest.js';
 import { WriteSingleRegisterRequest } from './requests/WriteSingleRegisterRequest.js';
 import { ReadCoilsResponseParser } from './responses/ReadCoilsResponseParser.js';
 import { ReadDiscreteInputsResponseParser } from './responses/ReadDiscreteInputsResponseParser.js';
@@ -17,6 +18,7 @@ import { ReadDiscreteInputsRequest } from './requests/ReadDiscreteInputsRequest.
 import { ReadHoldingRegistersResponseParser } from './responses/ReadHoldingRegistersResponseParser.js';
 import { ReadInputRegistersResponseParser } from './responses/ReadInputRegistersResponseParser.js';
 import { WriteMultipleRegistersResponseParser } from './responses/WriteMultipleRegistersResponseParser.js';
+import { WriteMultipleCoilsResponseParser } from './responses/WriteMultipleCoilsResponseParser.js';
 import { WriteSingleRegisterResponseParser } from './responses/WriteSingleRegisterResponseParser.js';
 import { TransactionManager } from './TransactionManager.js';
 import { WriteSingleCoilRequest } from './requests/WriteSingleCoilRequest.js';
@@ -265,7 +267,34 @@ export class ModbusClient {
       value,
     );
   }
+    /**
+   * Writes multiple coils using Modbus function code 0x0F.
+   *
+   * @param unitId Modbus unit identifier.
+   * @param address Start coil address.
+   * @param values Coil values.
+   */
+  public async writeMultipleCoils(
+    unitId: number,
+    address: number,
+    values: boolean[],
+  ): Promise<void> {
+    const request =
+      WriteMultipleCoilsRequest.create(
+        unitId,
+        address,
+        values,
+      );
 
+    const frame =
+      await this.sendRequest(request);
+
+    WriteMultipleCoilsResponseParser.parse(
+      frame,
+      address,
+      values.length,
+    );
+  }
   /**
    * Writes multiple registers using Modbus function code 0x10.
    *

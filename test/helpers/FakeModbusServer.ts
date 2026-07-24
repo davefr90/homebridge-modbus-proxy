@@ -364,6 +364,14 @@ private processFrame(
 
       break;
 
+    case ModbusFunctionCode.WriteMultipleCoils:
+  this.handleWriteMultipleCoils(
+    socket,
+    frame,
+  );
+
+      break;
+
     case ModbusFunctionCode.WriteMultipleRegisters:
       this.handleWriteMultipleRegisters(
         socket,
@@ -555,6 +563,83 @@ private handleReadDiscreteInputs(
       frame.unitId,
       ModbusFunctionCode.ReadDiscreteInputs,
       responseData,
+    );
+
+  this.sendFrame(
+    socket,
+    responseFrame,
+  );
+}
+
+  /**
+ * Handles Function Code 0x0F:
+ * Write Multiple Coils.
+ *
+ * Request data:
+ *
+ * Byte 0-1: Start address
+ * Byte 2-3: Coil quantity
+ * Byte 4:   Byte count
+ * Byte 5-n: Packed coil values
+ */
+private handleWriteMultipleCoils(
+  socket: Socket,
+  frame: ModbusTcpFrame,
+): void {
+  const startAddress =
+    frame.data.readUInt16BE(0);
+
+  const quantity =
+    frame.data.readUInt16BE(2);
+
+  if (
+    !this.isValidRegisterRange(
+      startAddress,
+      quantity,
+    )
+  ) {
+    this.sendException(
+      socket,
+      frame,
+      ModbusExceptionCode.IllegalDataAddress,
+    );
+
+    return;
+  }
+
+  const values: boolean[] = [];
+
+  for (
+    let index = 0;
+    index < quantity;
+    index++
+  ) {
+    const byte =
+      frame.data.readUInt8(
+        5 + Math.floor(index / 8),
+      );
+
+    const bit =
+      (byte >> (index % 8)) & 0x01;
+
+    values.push(
+      bit === 1,
+    );
+  }
+
+  this.coils.writeCoils(
+    startAddress,
+    values,
+  );
+
+  const responseFrame =
+    this.createWriteMultipleRegistersResponse(
+      frame.transactionId,
+      frame.protocolId,
+      frame.unitId,
+      ModbusFunctionCode.WriteMultipleCoils,
+      startAddress,
+      quantity,
     );
 
   this.sendFrame(

@@ -33,7 +33,25 @@ export class CoilBank {
       value,
     );
   }
-
+    /**
+   * Writes multiple consecutive coils.
+   */
+  public writeCoils(
+    address: number,
+    values: boolean[],
+  ): void {
+    values.forEach(
+      (
+        value,
+        index,
+      ) => {
+        this.writeCoil(
+          address + index,
+          value,
+        );
+      },
+    );
+  }
   /**
    * Removes all stored coils.
    */
