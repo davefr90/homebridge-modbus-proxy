@@ -215,6 +215,27 @@ function sendFrame(
   );
 }
 
+/**
+ * Creates request data for reading one register.
+ */
+function createReadRegisterData(
+  address: number,
+): Buffer {
+  const data = Buffer.alloc(4);
+
+  data.writeUInt16BE(
+    address,
+    0,
+  );
+
+  data.writeUInt16BE(
+    1,
+    2,
+  );
+
+  return data;
+}
+
 describe('ModbusClient executeFrame', () => {
   let server:
     | FakeModbusServer
@@ -228,17 +249,16 @@ describe('ModbusClient executeFrame', () => {
     | ProxyServer
     | undefined;
 
-  let proxyClient:
-    | Socket
-    | undefined;
+  const proxyClients: Socket[] = [];
 
   afterEach(async () => {
-    if (
-      proxyClient !== undefined &&
-      !proxyClient.destroyed
-    ) {
-      proxyClient.destroy();
+    for (const proxyClient of proxyClients) {
+      if (!proxyClient.destroyed) {
+        proxyClient.destroy();
+      }
     }
+
+    proxyClients.length = 0;
 
     if (proxyServer !== undefined) {
       await proxyServer.stop();
@@ -250,7 +270,6 @@ describe('ModbusClient executeFrame', () => {
       await server.stop();
     }
 
-    proxyClient = undefined;
     proxyServer = undefined;
     client = undefined;
     server = undefined;
@@ -273,25 +292,13 @@ describe('ModbusClient executeFrame', () => {
 
     await client.connect();
 
-    const requestData = Buffer.alloc(4);
-
-    requestData.writeUInt16BE(
-      100,
-      0,
-    );
-
-    requestData.writeUInt16BE(
-      1,
-      2,
-    );
-
     const requestFrame =
       new ModbusTcpFrame(
         42,
         0,
         1,
         ModbusFunctionCode.ReadHoldingRegisters,
-        requestData,
+        createReadRegisterData(100),
       );
 
     const response =
@@ -405,23 +412,12 @@ describe('ModbusClient executeFrame', () => {
 
     await proxyServer.start();
 
-    proxyClient =
+    const proxyClient =
       await connectTcpClient(
         proxyServer.port,
       );
 
-    const requestData =
-      Buffer.alloc(4);
-
-    requestData.writeUInt16BE(
-      100,
-      0,
-    );
-
-    requestData.writeUInt16BE(
-      1,
-      2,
-    );
+    proxyClients.push(proxyClient);
 
     const requestFrame =
       new ModbusTcpFrame(
@@ -429,7 +425,7 @@ describe('ModbusClient executeFrame', () => {
         0,
         1,
         ModbusFunctionCode.ReadHoldingRegisters,
-        requestData,
+        createReadRegisterData(100),
       );
 
     const responsePromise =
@@ -470,6 +466,154 @@ describe('ModbusClient executeFrame', () => {
         0x02,
         0x04,
         0xd2,
+      ]),
+    );
+  });
+
+  it('handles two concurrent proxy clients', async () => {
+    server = new FakeModbusServer();
+
+    await server.start();
+
+    server.registers.writeHoldingRegister(
+      100,
+      1234,
+    );
+
+    server.registers.writeHoldingRegister(
+      101,
+      5678,
+    );
+
+    const device: ManagedDevice = {
+      id: 'concurrent-proxy-target',
+      name: 'Concurrent Proxy Target',
+      host: '127.0.0.1',
+      port: server.port,
+      unitId: 1,
+    };
+
+    client = new ModbusClient(
+      device.host,
+      device.port,
+    );
+
+    const connectionManager =
+      new ConnectionManager(
+        new ManagedDeviceRuntime(device),
+        client,
+      );
+
+    await connectionManager.connect();
+
+    proxyServer =
+      new ProxyServer(
+        connectionManager,
+      );
+
+    await proxyServer.start();
+
+    const [
+      firstProxyClient,
+      secondProxyClient,
+    ] = await Promise.all([
+      connectTcpClient(
+        proxyServer.port,
+      ),
+      connectTcpClient(
+        proxyServer.port,
+      ),
+    ]);
+
+    proxyClients.push(
+      firstProxyClient,
+      secondProxyClient,
+    );
+
+    const firstRequest =
+      new ModbusTcpFrame(
+        201,
+        0,
+        1,
+        ModbusFunctionCode.ReadHoldingRegisters,
+        createReadRegisterData(100),
+      );
+
+    const secondRequest =
+      new ModbusTcpFrame(
+        202,
+        0,
+        1,
+        ModbusFunctionCode.ReadHoldingRegisters,
+        createReadRegisterData(101),
+      );
+
+    const firstResponsePromise =
+      receiveFrame(
+        firstProxyClient,
+      );
+
+    const secondResponsePromise =
+      receiveFrame(
+        secondProxyClient,
+      );
+
+    await Promise.all([
+      sendFrame(
+        firstProxyClient,
+        firstRequest,
+      ),
+      sendFrame(
+        secondProxyClient,
+        secondRequest,
+      ),
+    ]);
+
+    const [
+      firstResponse,
+      secondResponse,
+    ] = await Promise.all([
+      firstResponsePromise,
+      secondResponsePromise,
+    ]);
+
+    expect(
+      firstResponse.transactionId,
+    ).toBe(201);
+
+    expect(
+      firstResponse.functionCode,
+    ).toBe(
+      ModbusFunctionCode.ReadHoldingRegisters,
+    );
+
+    expect(
+      firstResponse.data,
+    ).toEqual(
+      Buffer.from([
+        0x02,
+        0x04,
+        0xd2,
+      ]),
+    );
+
+    expect(
+      secondResponse.transactionId,
+    ).toBe(202);
+
+    expect(
+      secondResponse.functionCode,
+    ).toBe(
+      ModbusFunctionCode.ReadHoldingRegisters,
+    );
+
+    expect(
+      secondResponse.data,
+    ).toEqual(
+      Buffer.from([
+        0x02,
+        0x16,
+        0x2e,
       ]),
     );
   });
