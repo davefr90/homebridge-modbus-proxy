@@ -7,34 +7,48 @@ import { ModbusTcpFrame } from '../protocol/ModbusTcpFrame.js';
 import { ModbusRequest } from './ModbusRequest.js';
 import { PendingRequest } from './PendingRequest.js';
 import { ReadCoilsRequest } from './requests/ReadCoilsRequest.js';
+import { ReadDiscreteInputsRequest } from './requests/ReadDiscreteInputsRequest.js';
 import { ReadHoldingRegistersRequest } from './requests/ReadHoldingRegistersRequest.js';
 import { ReadInputRegistersRequest } from './requests/ReadInputRegistersRequest.js';
-import { WriteMultipleRegistersRequest } from './requests/WriteMultipleRegistersRequest.js';
 import { WriteMultipleCoilsRequest } from './requests/WriteMultipleCoilsRequest.js';
+import { WriteMultipleRegistersRequest } from './requests/WriteMultipleRegistersRequest.js';
+import { WriteSingleCoilRequest } from './requests/WriteSingleCoilRequest.js';
 import { WriteSingleRegisterRequest } from './requests/WriteSingleRegisterRequest.js';
 import { ReadCoilsResponseParser } from './responses/ReadCoilsResponseParser.js';
 import { ReadDiscreteInputsResponseParser } from './responses/ReadDiscreteInputsResponseParser.js';
-import { ReadDiscreteInputsRequest } from './requests/ReadDiscreteInputsRequest.js';
 import { ReadHoldingRegistersResponseParser } from './responses/ReadHoldingRegistersResponseParser.js';
 import { ReadInputRegistersResponseParser } from './responses/ReadInputRegistersResponseParser.js';
-import { WriteMultipleRegistersResponseParser } from './responses/WriteMultipleRegistersResponseParser.js';
 import { WriteMultipleCoilsResponseParser } from './responses/WriteMultipleCoilsResponseParser.js';
+import { WriteMultipleRegistersResponseParser } from './responses/WriteMultipleRegistersResponseParser.js';
+import { WriteSingleCoilResponseParser } from './responses/WriteSingleCoilResponseParser.js';
 import { WriteSingleRegisterResponseParser } from './responses/WriteSingleRegisterResponseParser.js';
 import { TransactionManager } from './TransactionManager.js';
-import { WriteSingleCoilRequest } from './requests/WriteSingleCoilRequest.js';
-import { WriteSingleCoilResponseParser } from './responses/WriteSingleCoilResponseParser.js';
+
 /**
  * Modbus TCP client.
  */
 export class ModbusClient {
   private readonly connection: TcpConnection;
-  private readonly transactionManager: TransactionManager;
+
+  private readonly transactionManager:
+    TransactionManager;
+
   private readonly pendingRequests =
     new Map<number, PendingRequest>();
 
   private readonly host: string;
+
   private readonly port: number;
 
+  private disconnectedCallback?: (
+    error?: Error,
+  ) => void;
+
+  private manualDisconnect = false;
+
+  /**
+   * Creates a new Modbus TCP client.
+   */
   public constructor(
     host: string,
     port = 502,
@@ -43,6 +57,7 @@ export class ModbusClient {
     this.port = port;
 
     this.connection = new TcpConnection();
+
     this.transactionManager =
       new TransactionManager();
 
@@ -54,7 +69,9 @@ export class ModbusClient {
 
     this.connection.onError(
       (error) => {
-        this.handleConnectionError(error);
+        this.handleConnectionError(
+          error,
+        );
       },
     );
 
@@ -65,7 +82,7 @@ export class ModbusClient {
     );
   }
 
-    /**
+  /**
    * Returns whether the TCP connection is currently open.
    */
   public get isConnected(): boolean {
@@ -73,9 +90,24 @@ export class ModbusClient {
   }
 
   /**
+   * Registers a callback that is invoked when the TCP
+   * connection closes unexpectedly.
+   */
+  public onDisconnected(
+    callback: (
+      error?: Error,
+    ) => void,
+  ): void {
+    this.disconnectedCallback =
+      callback;
+  }
+
+  /**
    * Opens the TCP connection to the Modbus server.
    */
   public async connect(): Promise<void> {
+    this.manualDisconnect = false;
+
     await this.connection.connect(
       this.host,
       this.port,
@@ -86,6 +118,8 @@ export class ModbusClient {
    * Closes the TCP connection.
    */
   public disconnect(): void {
+    this.manualDisconnect = true;
+
     this.connection.disconnect();
     this.transactionManager.reset();
 
@@ -131,7 +165,8 @@ export class ModbusClient {
       quantity,
     );
   }
-    /**
+
+  /**
    * Reads discrete inputs using Modbus function code 0x02.
    *
    * @param unitId Modbus unit identifier.
@@ -159,6 +194,7 @@ export class ModbusClient {
       quantity,
     );
   }
+
   /**
    * Reads holding registers using Modbus function code 0x03.
    *
@@ -274,7 +310,8 @@ export class ModbusClient {
       value,
     );
   }
-    /**
+
+  /**
    * Writes multiple coils using Modbus function code 0x0F.
    *
    * @param unitId Modbus unit identifier.
@@ -302,6 +339,7 @@ export class ModbusClient {
       values.length,
     );
   }
+
   /**
    * Writes multiple registers using Modbus function code 0x10.
    *
@@ -331,7 +369,7 @@ export class ModbusClient {
     );
   }
 
-    /**
+  /**
    * Executes a raw Modbus TCP frame.
    *
    * The incoming transaction identifier is preserved for
@@ -375,7 +413,8 @@ export class ModbusClient {
       response.data,
     );
   }
-      /**
+
+  /**
    * Maps and sends a high-level Modbus request.
    */
   private sendRequest(
@@ -427,35 +466,40 @@ export class ModbusClient {
 
         try {
           const buffer =
-            ModbusTcpEncoder.encode(frame);
+            ModbusTcpEncoder.encode(
+              frame,
+            );
 
           void this.connection
             .send(buffer)
-            .catch((error: unknown) => {
-              /*
-               * The request may already have been completed
-               * before the send callback reports its result.
-               */
-              if (
-                this.pendingRequests.get(
+            .catch(
+              (error: unknown) => {
+                /*
+                 * The request may already have been
+                 * completed before the send callback
+                 * reports its result.
+                 */
+                if (
+                  this.pendingRequests.get(
+                    transactionId,
+                  ) !== pendingRequest
+                ) {
+                  return;
+                }
+
+                this.pendingRequests.delete(
                   transactionId,
-                ) !== pendingRequest
-              ) {
-                return;
-              }
+                );
 
-              this.pendingRequests.delete(
-                transactionId,
-              );
-
-              pendingRequest.reject(
-                error instanceof Error
-                  ? error
-                  : new Error(
-                      String(error),
-                    ),
-              );
-            });
+                pendingRequest.reject(
+                  error instanceof Error
+                    ? error
+                    : new Error(
+                        String(error),
+                      ),
+                );
+              },
+            );
         } catch (error) {
           this.pendingRequests.delete(
             transactionId,
@@ -489,7 +533,9 @@ export class ModbusClient {
      * Ignore responses for unknown or already completed
      * transaction identifiers.
      */
-    if (pendingRequest === undefined) {
+    if (
+      pendingRequest === undefined
+    ) {
       return;
     }
 
@@ -509,12 +555,14 @@ export class ModbusClient {
      * 0x06 becomes 0x86
      * 0x10 becomes 0x90
      */
-        const isExceptionResponse =
-      (frame.functionCode & 0x80) !== 0;
+    const isExceptionResponse =
+      (frame.functionCode & 0x80) !==
+      0;
 
     if (
       !isExceptionResponse ||
-      pendingRequest.resolveExceptionResponses
+      pendingRequest
+        .resolveExceptionResponses
     ) {
       pendingRequest.resolve(frame);
       return;
@@ -528,7 +576,8 @@ export class ModbusClient {
       pendingRequest.reject(
         new Error(
           'Invalid Modbus exception response: ' +
-            `expected 1 data byte, received ${frame.data.length}.`,
+            'expected 1 data byte, ' +
+            `received ${frame.data.length}.`,
         ),
       );
 
@@ -573,14 +622,10 @@ export class ModbusClient {
   }
 
   /**
-   * Rejects all pending requests when the TCP
-   * connection closes.
+   * Rejects all pending requests and notifies listeners
+   * when the TCP connection closes unexpectedly.
    */
   private handleConnectionClose(): void {
-    if (this.pendingRequests.size === 0) {
-      return;
-    }
-
     const error = new Error(
       'Modbus connection closed before a response was received.',
     );
@@ -593,5 +638,11 @@ export class ModbusClient {
     }
 
     this.pendingRequests.clear();
+
+    if (!this.manualDisconnect) {
+      this.disconnectedCallback?.(
+        error,
+      );
+    }
   }
 }

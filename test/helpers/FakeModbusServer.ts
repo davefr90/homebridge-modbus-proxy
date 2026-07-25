@@ -101,107 +101,113 @@ export class FakeModbusServer {
   }
 
   /**
-   * Starts the fake Modbus TCP server.
-   *
-   * Port zero instructs the operating system to select
-   * an available TCP port automatically.
-   */
-  public async start(): Promise<void> {
-    if (this.server !== undefined) {
-      throw new Error(
-        'FakeModbusServer is already running.',
-      );
-    }
-
-    this.server = net.createServer(
-      (socket) => {
-        this.handleConnection(socket);
-      },
+ * Starts the fake Modbus TCP server.
+ *
+ * Port zero instructs the operating system to select
+ * an available TCP port automatically.
+ *
+ * A specific port can be supplied when a test needs to
+ * restart the server on the same endpoint.
+ */
+public async start(
+  port = 0,
+): Promise<void> {
+  if (this.server !== undefined) {
+    throw new Error(
+      'FakeModbusServer is already running.',
     );
+  }
 
-    await new Promise<void>(
-      (
-        resolve,
-        reject,
-      ) => {
-        const server = this.server;
+  this.server = net.createServer(
+    (socket) => {
+      this.handleConnection(socket);
+    },
+  );
 
-        if (server === undefined) {
+  await new Promise<void>(
+    (
+      resolve,
+      reject,
+    ) => {
+      const server = this.server;
+
+      if (server === undefined) {
+        reject(
+          new Error(
+            'FakeModbusServer could not be created.',
+          ),
+        );
+
+        return;
+      }
+
+      /**
+       * Handles an error that occurs while starting
+       * the TCP server.
+       */
+      const handleStartError = (
+        error: Error,
+      ): void => {
+        server.off(
+          'listening',
+          handleListening,
+        );
+
+        this.server = undefined;
+
+        reject(error);
+      };
+
+      /**
+       * Handles the successful server start.
+       */
+      const handleListening = (): void => {
+        server.off(
+          'error',
+          handleStartError,
+        );
+
+        const address = server.address();
+
+        if (
+          address === null ||
+          typeof address === 'string'
+        ) {
+          this.server = undefined;
+
           reject(
             new Error(
-              'FakeModbusServer could not be created.',
+              'Unable to determine listening port.',
             ),
           );
 
           return;
         }
 
-        /**
-         * Handles an error that occurs while starting
-         * the TCP server.
-         */
-        const handleStartError = (
-          error: Error,
-        ): void => {
-          server.off(
-            'listening',
-            handleListening,
-          );
+        this.listeningPort =
+          address.port;
 
-          this.server = undefined;
+        resolve();
+      };
 
-          reject(error);
-        };
+      server.once(
+        'error',
+        handleStartError,
+      );
 
-        /**
-         * Handles the successful server start.
-         */
-        const handleListening = (): void => {
-          server.off(
-            'error',
-            handleStartError,
-          );
+      server.once(
+        'listening',
+        handleListening,
+      );
 
-          const address = server.address();
+      server.listen(
+        port,
+        '127.0.0.1',
+      );
+    },
+  );
+}
 
-          if (
-            address === null ||
-            typeof address === 'string'
-          ) {
-            this.server = undefined;
-
-            reject(
-              new Error(
-                'Unable to determine listening port.',
-              ),
-            );
-
-            return;
-          }
-
-          this.listeningPort =
-            address.port;
-
-          resolve();
-        };
-
-        server.once(
-          'error',
-          handleStartError,
-        );
-
-        server.once(
-          'listening',
-          handleListening,
-        );
-
-        server.listen(
-          0,
-          '127.0.0.1',
-        );
-      },
-    );
-  }
 
   /**
    * Stops the fake Modbus TCP server.
