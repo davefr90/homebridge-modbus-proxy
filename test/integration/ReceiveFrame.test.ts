@@ -1,48 +1,65 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import {
+  afterEach,
+  describe,
+  expect,
+  it,
+} from 'vitest';
 
 import { ModbusClient } from '../../src/client/ModbusClient.js';
 import { FakeModbusServer } from '../helpers/FakeModbusServer.js';
 
-describe('FakeModbusServer receive frame', () => {
+describe(
+  'FakeModbusServer receive frame',
+  () => {
 
-  let server: FakeModbusServer;
+    let server: FakeModbusServer | undefined;
 
-  afterEach(async () => {
-    await server.stop();
-  });
-
-  it('receives a Modbus request', async () => {
-
-    server = new FakeModbusServer();
-
-    await server.start();
-
-    const client = new ModbusClient(
-      '127.0.0.1',
-      server.port,
+    afterEach(
+      async () => {
+        await server?.stop();
+      },
     );
 
-    await client.connect();
+    it(
+      'receives a Modbus request',
+      async () => {
 
-    client.readHoldingRegisters(
-      1,
-      100,
-      2,
-    ).catch(() => {
-      // No response yet.
-    });
+        server =
+          new FakeModbusServer();
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, 50),
+        await server.start();
+
+        const client =
+          new ModbusClient(
+            '127.0.0.1',
+            server.port,
+          );
+
+        await client.connect();
+
+        try {
+          await client.readHoldingRegisters(
+            1,
+            100,
+            2,
+          );
+
+          const frame =
+            server.getLastFrame();
+
+          expect(
+            frame,
+          ).toBeDefined();
+
+          expect(
+            frame?.unitId,
+          ).toBe(1);
+        } finally {
+          await client.disconnect();
+        }
+
+      },
     );
 
-    const frame = server.getLastFrame();
-
-    expect(frame).toBeDefined();
-
-    expect(frame?.unitId).toBe(1);
-
-    await client.disconnect();
-  });
-
-});
+  },
+);
