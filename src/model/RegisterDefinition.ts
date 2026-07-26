@@ -47,9 +47,20 @@ export interface RegisterDefinition {
   pollIntervalMs?: number;
 
   /**
-   * Scale factor.
+   * Fixed scale factor.
+   *
+   * Example:
+   * 0.1 converts a raw value of 2300 into 230.
    */
   scale?: number;
+
+  /**
+   * Logical property containing a dynamic base-10 scale factor.
+   *
+   * Example:
+   * raw value 2300 and scale factor -1 produce 230.
+   */
+  scaleProperty?: string;
 
   /**
    * Whether the register can be written.
@@ -57,7 +68,7 @@ export interface RegisterDefinition {
   writable?: boolean;
 
   /**
-   * Human readable register name.
+   * Human-readable register name.
    */
   name: string;
 
