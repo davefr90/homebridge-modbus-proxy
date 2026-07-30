@@ -3,12 +3,29 @@ import {
 } from '../../device/ManagedDevice.js';
 
 import {
+  CommonApi,
+} from '../api/CommonApi.js';
+
+import {
+  InverterApi,
+} from '../api/InverterApi.js';
+
+import {
+  NameplateApi,
+} from '../api/NameplateApi.js';
+
+import {
   SunSpecModel,
 } from '../SunSpecModel.js';
 
 import {
   SunSpecModelContainer,
 } from '../SunSpecModelContainer.js';
+
+import type {
+  SunSpecPropertyName,
+  SunSpecPropertyValue,
+} from '../SunSpecPropertyTypes.js';
 
 /**
  * Represents a generic SunSpec device.
@@ -20,10 +37,34 @@ import {
 export class SunSpecDevice {
 
   /**
+   * Common Model API.
+   *
+   * SunSpec Model ID: 1
+   */
+  public readonly common:
+    CommonApi;
+
+  /**
+   * Inverter Model API.
+   *
+   * Currently backed by SunSpec Model ID 103.
+   */
+  public readonly inverter:
+    InverterApi;
+
+  /**
+   * Nameplate Model API.
+   *
+   * SunSpec Model ID: 120
+   */
+  public readonly nameplate:
+    NameplateApi;
+
+  /**
    * Creates a new SunSpec device.
    *
    * @param container Collection of supported SunSpec models.
-   * @param managedDevice Logical Modbus device used for
+   * @param logicalDevice Logical Modbus device used for
    * reading and writing properties.
    */
   public constructor(
@@ -35,29 +76,53 @@ export class SunSpecDevice {
       ManagedDevice,
 
   ) {
+
+    this.common =
+      new CommonApi(
+        this,
+      );
+
+    this.inverter =
+      new InverterApi(
+        this,
+      );
+
+    this.nameplate =
+      new NameplateApi(
+        this,
+      );
+
   }
 
   /**
-   * Reads a logical SunSpec device property.
+   * Reads a typed logical SunSpec device property.
    *
-   * Examples:
-   *
-   * common.manufacturer
-   * common.serialNumber
-   * inverter.acPower
+   * The return type is inferred from the supplied property.
    */
-  public async read(
-    property: string,
-  ): Promise<boolean | number | string> {
+  public async read<
+    TProperty extends SunSpecPropertyName,
+  >(
+    property: TProperty,
+  ): Promise<
+    SunSpecPropertyValue<TProperty>
+  > {
 
-    return this.logicalDevice.read(
-      property,
-    );
+    const value =
+      await this.logicalDevice.read(
+        property,
+      );
+
+    return value as
+      SunSpecPropertyValue<TProperty>;
 
   }
 
   /**
    * Writes a logical SunSpec device property.
+   *
+   * Writable property typing will be introduced separately,
+   * so read-only properties cannot accidentally be exposed
+   * as writable.
    */
   public async write(
     property: string,

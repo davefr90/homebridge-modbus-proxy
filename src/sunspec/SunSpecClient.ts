@@ -18,6 +18,11 @@ import {
   SunSpecDeviceFactory,
 } from './SunSpecDeviceFactory.js';
 
+import type {
+  SunSpecPropertyName,
+  SunSpecPropertyValue,
+} from './SunSpecPropertyTypes.js';
+
 /**
  * Public client for connecting to and interacting with
  * SunSpec-compatible Modbus TCP devices.
@@ -110,18 +115,17 @@ export class SunSpecClient {
   }
 
   /**
-   * Reads a logical SunSpec device property.
+   * Reads a typed logical SunSpec device property.
    *
-   * Examples:
-   *
-   * common.manufacturer
-   * common.serialNumber
-   * inverter.acPower
-   * nameplate.maxPower
+   * The return type is inferred from the supplied property.
    */
-  public async read(
-    property: string,
-  ): Promise<boolean | number | string> {
+  public async read<
+    TProperty extends SunSpecPropertyName,
+  >(
+    property: TProperty,
+  ): Promise<
+    SunSpecPropertyValue<TProperty>
+  > {
 
     return this.sunSpecDevice.read(
       property,
@@ -131,6 +135,8 @@ export class SunSpecClient {
 
   /**
    * Writes a logical SunSpec device property.
+   *
+   * Writable property typing will be introduced separately.
    */
   public async write(
     property: string,
