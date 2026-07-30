@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import {
+  PropertyApi,
+} from './PropertyApi.js';
+
 import type {
   SunSpecPropertyReader,
 } from './SunSpecPropertyReader.js';
@@ -12,12 +16,22 @@ import type {
  *
  * SunSpec Model ID: 1
  */
-export class CommonApi {
+export class CommonApi
+  extends PropertyApi {
 
+  /**
+   * Creates a new Common Model API.
+   *
+   * @param reader Logical SunSpec property reader.
+   */
   public constructor(
-    private readonly reader:
-      SunSpecPropertyReader,
+    reader: SunSpecPropertyReader,
   ) {
+
+    super(
+      reader,
+    );
+
   }
 
   /**
@@ -26,7 +40,7 @@ export class CommonApi {
   public async manufacturer():
     Promise<string> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.Manufacturer,
     );
 
@@ -38,7 +52,7 @@ export class CommonApi {
   public async modelName():
     Promise<string> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.Model,
     );
 
@@ -50,7 +64,7 @@ export class CommonApi {
   public async options():
     Promise<string> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.Options,
     );
 
@@ -62,7 +76,7 @@ export class CommonApi {
   public async version():
     Promise<string> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.Version,
     );
 
@@ -74,7 +88,7 @@ export class CommonApi {
   public async serialNumber():
     Promise<string> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.SerialNumber,
     );
 
@@ -86,7 +100,7 @@ export class CommonApi {
   public async deviceAddress():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Common.DeviceAddress,
     );
 

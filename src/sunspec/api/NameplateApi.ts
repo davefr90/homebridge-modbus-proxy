@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import {
+  PropertyApi,
+} from './PropertyApi.js';
+
 import type {
   SunSpecPropertyReader,
 } from './SunSpecPropertyReader.js';
@@ -11,12 +15,22 @@ import type {
  *
  * SunSpec Model ID: 120
  */
-export class NameplateApi {
+export class NameplateApi
+  extends PropertyApi {
 
+  /**
+   * Creates a new Nameplate Model API.
+   *
+   * @param reader Logical SunSpec property reader.
+   */
   public constructor(
-    private readonly reader:
-      SunSpecPropertyReader,
+    reader: SunSpecPropertyReader,
   ) {
+
+    super(
+      reader,
+    );
+
   }
 
   /**
@@ -25,7 +39,7 @@ export class NameplateApi {
   public async maximumPower():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Nameplate.MaximumPower,
     );
 
@@ -37,7 +51,7 @@ export class NameplateApi {
   public async maximumCurrent():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Nameplate.MaximumCurrent,
     );
 
@@ -49,7 +63,7 @@ export class NameplateApi {
   public async maximumVoltage():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Nameplate.MaximumVoltage,
     );
 

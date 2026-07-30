@@ -4,7 +4,7 @@ import type {
 } from '../SunSpecPropertyTypes.js';
 
 /**
- * Provides typed access to logical SunSpec properties.
+ * Provides access to logical SunSpec properties.
  *
  * Model-specific API classes depend on this interface instead
  * of depending directly on SunSpecDevice.
@@ -13,6 +13,8 @@ export interface SunSpecPropertyReader {
 
   /**
    * Reads a typed logical SunSpec property.
+   *
+   * The return type is inferred from the supplied property.
    */
   read<
     TProperty extends SunSpecPropertyName,
@@ -21,5 +23,15 @@ export interface SunSpecPropertyReader {
   ): Promise<
     SunSpecPropertyValue<TProperty>
   >;
+
+  /**
+   * Writes a logical SunSpec property.
+   *
+   * Writable property typing will be introduced separately.
+   */
+  write(
+    property: string,
+    value: boolean | number | string,
+  ): Promise<void>;
 
 }

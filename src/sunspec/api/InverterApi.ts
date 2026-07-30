@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import {
+  PropertyApi,
+} from './PropertyApi.js';
+
 import type {
   SunSpecPropertyReader,
 } from './SunSpecPropertyReader.js';
@@ -11,12 +15,22 @@ import type {
  *
  * Currently backed by SunSpec Inverter Model 103.
  */
-export class InverterApi {
+export class InverterApi
+  extends PropertyApi {
 
+  /**
+   * Creates a new Inverter Model API.
+   *
+   * @param reader Logical SunSpec property reader.
+   */
   public constructor(
-    private readonly reader:
-      SunSpecPropertyReader,
+    reader: SunSpecPropertyReader,
   ) {
+
+    super(
+      reader,
+    );
+
   }
 
   /**
@@ -25,7 +39,7 @@ export class InverterApi {
   public async acCurrent():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcCurrent,
     );
 
@@ -37,7 +51,7 @@ export class InverterApi {
   public async acCurrentA():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcCurrentA,
     );
 
@@ -49,7 +63,7 @@ export class InverterApi {
   public async acCurrentB():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcCurrentB,
     );
 
@@ -61,7 +75,7 @@ export class InverterApi {
   public async acCurrentC():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcCurrentC,
     );
 
@@ -73,7 +87,7 @@ export class InverterApi {
   public async acVoltageAB():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageAB,
     );
 
@@ -85,7 +99,7 @@ export class InverterApi {
   public async acVoltageBC():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageBC,
     );
 
@@ -97,7 +111,7 @@ export class InverterApi {
   public async acVoltageCA():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageCA,
     );
 
@@ -109,7 +123,7 @@ export class InverterApi {
   public async acVoltageAN():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageAN,
     );
 
@@ -121,7 +135,7 @@ export class InverterApi {
   public async acVoltageBN():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageBN,
     );
 
@@ -133,7 +147,7 @@ export class InverterApi {
   public async acVoltageCN():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcVoltageCN,
     );
 
@@ -145,7 +159,7 @@ export class InverterApi {
   public async acPower():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.AcPower,
     );
 
@@ -157,7 +171,7 @@ export class InverterApi {
   public async frequency():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.Frequency,
     );
 
@@ -169,7 +183,7 @@ export class InverterApi {
   public async apparentPower():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.ApparentPower,
     );
 
@@ -181,7 +195,7 @@ export class InverterApi {
   public async reactivePower():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.ReactivePower,
     );
 
@@ -193,7 +207,7 @@ export class InverterApi {
   public async powerFactor():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.PowerFactor,
     );
 
@@ -205,7 +219,7 @@ export class InverterApi {
   public async dcCurrent():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.DcCurrent,
     );
 
@@ -217,7 +231,7 @@ export class InverterApi {
   public async dcVoltage():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.DcVoltage,
     );
 
@@ -229,7 +243,7 @@ export class InverterApi {
   public async dcPower():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.DcPower,
     );
 
@@ -241,7 +255,7 @@ export class InverterApi {
   public async temperature():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.Temperature,
     );
 
@@ -253,7 +267,7 @@ export class InverterApi {
   public async status():
     Promise<number> {
 
-    return this.reader.read(
+    return this.read(
       SunSpecProperty.Inverter.Status,
     );
 
