@@ -32,7 +32,7 @@ export class WriteSingleRegisterResponseParser
 
     if (frame.data.length !== 4) {
       throw new ModbusProtocolError(
-        `Invalid Write Single Register response length: ` +
+        'Invalid Write Single Register response length: ' +
         `received ${frame.data.length} data bytes, expected 4.`,
       );
     }
@@ -42,14 +42,14 @@ export class WriteSingleRegisterResponseParser
 
     if (receivedAddress !== expectedAddress) {
       throw new ModbusProtocolError(
-        `Invalid Write Single Register response address: ` +
+        'Invalid Write Single Register response address: ' +
         `received ${receivedAddress}, expected ${expectedAddress}.`,
       );
     }
 
     if (receivedValue !== expectedValue) {
       throw new ModbusProtocolError(
-        `Invalid Write Single Register response value: ` +
+        'Invalid Write Single Register response value: ' +
         `received ${receivedValue}, expected ${expectedValue}.`,
       );
     }

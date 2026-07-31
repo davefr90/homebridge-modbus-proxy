@@ -65,25 +65,25 @@ export class ValueValidator {
 
     switch (definition.dataType) {
 
-      case RegisterDataType.Float32:
+    case RegisterDataType.Float32:
 
-        this.validateFloat(
-          Number(value),
-        );
+      this.validateFloat(
+        Number(value),
+      );
 
-        return;
+      return;
 
-      case RegisterDataType.String:
+    case RegisterDataType.String:
 
-        this.validateString(
-          value,
-          definition.length,
-        );
+      this.validateString(
+        value,
+        definition.length,
+      );
 
-        return;
+      return;
 
-      default:
-        return;
+    default:
+      return;
 
     }
 

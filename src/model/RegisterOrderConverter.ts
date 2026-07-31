@@ -11,31 +11,31 @@ export class RegisterOrderConverter {
   public convert(
     values: Uint16Array,
     byteOrder: RegisterByteOrder =
-      RegisterByteOrder.ABCD,
+    RegisterByteOrder.ABCD,
   ): Uint16Array {
 
     switch (byteOrder) {
 
-      case RegisterByteOrder.ABCD:
-        return values;
+    case RegisterByteOrder.ABCD:
+      return values;
 
-      case RegisterByteOrder.CDAB:
-        return new Uint16Array([
-          values[1],
-          values[0],
-        ]);
+    case RegisterByteOrder.CDAB:
+      return new Uint16Array([
+        values[1],
+        values[0],
+      ]);
 
-      case RegisterByteOrder.BADC:
-        return new Uint16Array([
-          this.swapBytes(values[0]),
-          this.swapBytes(values[1]),
-        ]);
+    case RegisterByteOrder.BADC:
+      return new Uint16Array([
+        this.swapBytes(values[0]),
+        this.swapBytes(values[1]),
+      ]);
 
-      case RegisterByteOrder.DCBA:
-        return new Uint16Array([
-          this.swapBytes(values[1]),
-          this.swapBytes(values[0]),
-        ]);
+    case RegisterByteOrder.DCBA:
+      return new Uint16Array([
+        this.swapBytes(values[1]),
+        this.swapBytes(values[0]),
+      ]);
 
     }
 

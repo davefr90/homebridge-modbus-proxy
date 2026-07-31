@@ -186,17 +186,17 @@ export class DiscoveryFormatter {
       modelId
     ) {
 
-      case 1:
-        return 'Common';
+    case 1:
+      return 'Common';
 
-      case 103:
-        return 'Three-Phase Inverter';
+    case 103:
+      return 'Three-Phase Inverter';
 
-      case 120:
-        return 'Nameplate';
+    case 120:
+      return 'Nameplate';
 
-      default:
-        return 'Unknown / not implemented';
+    default:
+      return 'Unknown / not implemented';
 
     }
 

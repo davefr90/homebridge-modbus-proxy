@@ -495,8 +495,8 @@ export class ModbusClient {
                   error instanceof Error
                     ? error
                     : new Error(
-                        String(error),
-                      ),
+                      String(error),
+                    ),
                 );
               },
             );
@@ -509,8 +509,8 @@ export class ModbusClient {
             error instanceof Error
               ? error
               : new Error(
-                  String(error),
-                ),
+                String(error),
+              ),
           );
         }
       },

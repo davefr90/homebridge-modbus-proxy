@@ -33,74 +33,74 @@ export class ValueConverter {
 
     switch (definition.dataType) {
 
-      case RegisterDataType.Boolean:
-        result =
+    case RegisterDataType.Boolean:
+      result =
           orderedValues[0] !== 0;
-        break;
+      break;
 
-      case RegisterDataType.Uint16:
-        result =
+    case RegisterDataType.Uint16:
+      result =
           orderedValues[0];
-        break;
+      break;
 
-      case RegisterDataType.Int16:
-        result =
+    case RegisterDataType.Int16:
+      result =
           (orderedValues[0] << 16) >> 16;
-        break;
+      break;
 
-      case RegisterDataType.Uint32:
-        result =
+    case RegisterDataType.Uint32:
+      result =
           orderedValues[0] * 65536 +
           orderedValues[1];
-        break;
+      break;
 
-      case RegisterDataType.Int32: {
+    case RegisterDataType.Int32: {
 
-        const value =
+      const value =
           orderedValues[0] * 65536 +
           orderedValues[1];
 
-        result =
+      result =
           value > 0x7FFFFFFF
             ? value - 0x100000000
             : value;
 
-        break;
-      }
+      break;
+    }
 
-      case RegisterDataType.Float32: {
+    case RegisterDataType.Float32: {
 
-        const buffer =
+      const buffer =
           new ArrayBuffer(4);
 
-        const view =
+      const view =
           new DataView(buffer);
 
-        view.setUint16(
-          0,
-          orderedValues[0],
-          false,
-        );
+      view.setUint16(
+        0,
+        orderedValues[0],
+        false,
+      );
 
-        view.setUint16(
-          2,
-          orderedValues[1],
-          false,
-        );
+      view.setUint16(
+        2,
+        orderedValues[1],
+        false,
+      );
 
-        result =
+      result =
           view.getFloat32(
             0,
             false,
           );
 
-        break;
-      }
+      break;
+    }
 
-      default:
-        throw new Error(
-          `Unsupported data type: ${definition.dataType}`,
-        );
+    default:
+      throw new Error(
+        `Unsupported data type: ${definition.dataType}`,
+      );
 
     }
 

@@ -142,8 +142,8 @@ function receiveFrame(
             error instanceof Error
               ? error
               : new Error(
-                  String(error),
-                ),
+                String(error),
+              ),
           );
         }
       };
@@ -746,59 +746,59 @@ describe('ModbusClient executeFrame', () => {
 
     const clientTasks: Promise<void>[] = [];
 
-for (
-  let clientIndex = 0;
-  clientIndex < clientCount;
-  clientIndex++
-) {
-  const socket =
+    for (
+      let clientIndex = 0;
+      clientIndex < clientCount;
+      clientIndex++
+    ) {
+      const socket =
     sockets[clientIndex];
 
-  if (socket === undefined) {
-    throw new Error(
-      `Missing proxy socket for client ${clientIndex}.`,
-    );
-  }
+      if (socket === undefined) {
+        throw new Error(
+          `Missing proxy socket for client ${clientIndex}.`,
+        );
+      }
 
-  clientTasks.push(
-    (async () => {
-      const baseAddress =
+      clientTasks.push(
+        (async () => {
+          const baseAddress =
         100 + clientIndex * 100;
 
-      const baseValue =
+          const baseValue =
         1000 + clientIndex * 100;
 
-      for (
-        let requestIndex = 0;
-        requestIndex < requestsPerClient;
-        requestIndex++
-      ) {
-        const transactionId =
+          for (
+            let requestIndex = 0;
+            requestIndex < requestsPerClient;
+            requestIndex++
+          ) {
+            const transactionId =
           clientIndex * 100 + requestIndex;
 
-        const address =
+            const address =
           baseAddress + requestIndex;
 
-        const expectedValue =
+            const expectedValue =
           baseValue + requestIndex;
 
-        const value =
+            const value =
           await readHoldingRegister(
             socket,
             transactionId,
             address,
           );
 
-        expect(value).toBe(
-          expectedValue,
-        );
-      }
-    })(),
-  );
-}
+            expect(value).toBe(
+              expectedValue,
+            );
+          }
+        })(),
+      );
+    }
 
-        await Promise.all(
-            clientTasks,
-        );
+    await Promise.all(
+      clientTasks,
+    );
   });
 });

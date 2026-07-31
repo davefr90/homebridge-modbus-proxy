@@ -397,37 +397,37 @@ export class RegisterDefinitionBuilder {
       ...(this.registerByteOrder === undefined
         ? {}
         : {
-            byteOrder:
+          byteOrder:
               this.registerByteOrder,
-          }),
+        }),
 
       ...(this.registerPollIntervalMs === undefined
         ? {}
         : {
-            pollIntervalMs:
+          pollIntervalMs:
               this.registerPollIntervalMs,
-          }),
+        }),
 
       ...(this.registerScale === undefined
         ? {}
         : {
-            scale:
+          scale:
               this.registerScale,
-          }),
+        }),
 
       ...(this.registerScaleProperty === undefined
         ? {}
         : {
-            scaleProperty:
+          scaleProperty:
               this.registerScaleProperty,
-          }),
+        }),
 
       ...(this.registerWritable === undefined
         ? {}
         : {
-            writable:
+          writable:
               this.registerWritable,
-          }),
+        }),
 
       name:
         this.registerName,
@@ -435,9 +435,9 @@ export class RegisterDefinitionBuilder {
       ...(this.registerUnit === undefined
         ? {}
         : {
-            unit:
+          unit:
               this.registerUnit,
-          }),
+        }),
 
     };
 

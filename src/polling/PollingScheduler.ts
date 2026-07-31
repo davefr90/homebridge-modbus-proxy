@@ -134,8 +134,8 @@ export class PollingScheduler {
 
     const poller =
     new DevicePoller(
-    task.task,
-    task.intervalMs,
+      task.task,
+      task.intervalMs,
     );
 
     this.pollers.set(

@@ -41,7 +41,7 @@ export class InverterModel103 {
   public static create(
     unitId = 1,
     modelStartAddress =
-      InverterModel103.DEFAULT_MODEL_START_ADDRESS,
+    InverterModel103.DEFAULT_MODEL_START_ADDRESS,
   ): SunSpecModel {
 
     if (

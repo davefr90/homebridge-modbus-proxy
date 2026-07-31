@@ -27,17 +27,17 @@ describe(
 
         const task:
           PollingTask<PollResult> = {
-          execute: vi
-            .fn()
-            .mockResolvedValue({
-              unitId: 1,
-              startAddress: 100,
-              values: new Uint16Array([
-                10,
-                20,
-              ]),
-            }),
-        };
+            execute: vi
+              .fn()
+              .mockResolvedValue({
+                unitId: 1,
+                startAddress: 100,
+                values: new Uint16Array([
+                  10,
+                  20,
+                ]),
+              }),
+          };
 
         const cachingTask =
           new CachingPollingTask(
@@ -83,12 +83,12 @@ describe(
 
         const task:
           PollingTask<PollResult> = {
-          execute: vi
-            .fn()
-            .mockResolvedValue(
-              result,
-            ),
-        };
+            execute: vi
+              .fn()
+              .mockResolvedValue(
+                result,
+              ),
+          };
 
         const cachingTask =
           new CachingPollingTask(

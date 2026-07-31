@@ -27,7 +27,7 @@ describe('ConnectionManager', () => {
   function createManager(): {
     manager: ConnectionManager;
     client: ModbusClient;
-  } {
+    } {
     const client =
       new ModbusClient(
         device.host,

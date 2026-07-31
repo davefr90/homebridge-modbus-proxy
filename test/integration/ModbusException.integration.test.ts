@@ -62,56 +62,56 @@ describe(
       },
     );
     it(
-  'rejects Read Input Registers with IllegalDataAddress',
-  async () => {
-    await expect(
-      client.readInputRegisters(
-        1,
-        0xffff,
-        1,
-      ),
-    ).rejects.toMatchObject({
-      functionCode: 0x04,
-      exceptionCode:
+      'rejects Read Input Registers with IllegalDataAddress',
+      async () => {
+        await expect(
+          client.readInputRegisters(
+            1,
+            0xffff,
+            1,
+          ),
+        ).rejects.toMatchObject({
+          functionCode: 0x04,
+          exceptionCode:
         ModbusExceptionCode.IllegalDataAddress,
-    });
-  },
-);
+        });
+      },
+    );
 
-it(
-  'rejects Write Single Register with IllegalDataAddress',
-  async () => {
-    await expect(
-      client.writeSingleRegister(
-        1,
-        0xffff,
-        1234,
-      ),
-    ).rejects.toMatchObject({
-      functionCode: 0x06,
-      exceptionCode:
+    it(
+      'rejects Write Single Register with IllegalDataAddress',
+      async () => {
+        await expect(
+          client.writeSingleRegister(
+            1,
+            0xffff,
+            1234,
+          ),
+        ).rejects.toMatchObject({
+          functionCode: 0x06,
+          exceptionCode:
         ModbusExceptionCode.IllegalDataAddress,
-    });
-  },
-);
+        });
+      },
+    );
 
-it(
-  'rejects Write Multiple Registers with IllegalDataAddress',
-  async () => {
-    await expect(
-      client.writeMultipleRegisters(
-        1,
-        0xffff,
-        [
-          1234,
-        ],
-      ),
-    ).rejects.toMatchObject({
-      functionCode: 0x10,
-      exceptionCode:
+    it(
+      'rejects Write Multiple Registers with IllegalDataAddress',
+      async () => {
+        await expect(
+          client.writeMultipleRegisters(
+            1,
+            0xffff,
+            [
+              1234,
+            ],
+          ),
+        ).rejects.toMatchObject({
+          functionCode: 0x10,
+          exceptionCode:
         ModbusExceptionCode.IllegalDataAddress,
-     });
-    },
-   );
+        });
+      },
+    );
   },
 );

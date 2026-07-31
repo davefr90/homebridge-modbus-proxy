@@ -234,8 +234,8 @@ describe('ProxyServer', () => {
     expect(server.sessionCount).toBe(1);
 
     await new Promise<void>((resolve) => {
-        client.once('close', () => resolve());
-        client.destroy();
+      client.once('close', () => resolve());
+      client.destroy();
     });
 
     await waitForEventLoop();

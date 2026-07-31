@@ -17,6 +17,10 @@ import {
 } from '../../src/sunspec/models/InverterModel103.js';
 
 import {
+  MeterModel203,
+} from '../../src/sunspec/models/MeterModel203.js';
+
+import {
   NameplateModel120,
 } from '../../src/sunspec/models/NameplateModel120.js';
 
@@ -54,7 +58,7 @@ describe(
     );
 
     it(
-      'creates the SunSpec Common Model',
+      'creates the padded SunSpec Common Model',
       () => {
 
         const result =
@@ -100,6 +104,50 @@ describe(
           ).name,
         ).toBe(
           'Common',
+        );
+
+      },
+    );
+
+    it(
+      'creates the unpadded SunSpec Common Model',
+      () => {
+
+        const result =
+          new SunSpecDiscoveryResult(
+            1,
+            40000,
+            [
+              {
+                id:
+                  CommonModel.MODEL_ID,
+                headerAddress:
+                  40002,
+                dataAddress:
+                  40004,
+                length:
+                  CommonModel.MODEL_LENGTH_WITHOUT_PAD,
+              },
+            ],
+          );
+
+        const device =
+          SunSpecDeviceFactory.create(
+            result,
+          );
+
+        expect(
+          device.size(),
+        ).toBe(
+          1,
+        );
+
+        expect(
+          device.hasModel(
+            CommonModel.MODEL_ID,
+          ),
+        ).toBe(
+          true,
         );
 
       },
@@ -194,6 +242,118 @@ describe(
         ).toBe(
           true,
         );
+
+      },
+    );
+
+    it(
+      'creates the SolarEdge model chain with an embedded meter',
+      () => {
+
+        const commonHeaderAddress =
+          40002;
+
+        const inverterHeaderAddress =
+          commonHeaderAddress
+          + 2
+          + CommonModel.MODEL_LENGTH_WITHOUT_PAD;
+
+        const embeddedCommonHeaderAddress =
+          inverterHeaderAddress
+          + 2
+          + InverterModel103.MODEL_LENGTH;
+
+        const meterHeaderAddress =
+          embeddedCommonHeaderAddress
+          + 2
+          + CommonModel.MODEL_LENGTH_WITHOUT_PAD;
+
+        const result =
+          new SunSpecDiscoveryResult(
+            2,
+            40000,
+            [
+              {
+                id:
+                  CommonModel.MODEL_ID,
+                headerAddress:
+                  commonHeaderAddress,
+                dataAddress:
+                  commonHeaderAddress + 2,
+                length:
+                  CommonModel.MODEL_LENGTH_WITHOUT_PAD,
+              },
+              {
+                id:
+                  InverterModel103.MODEL_ID,
+                headerAddress:
+                  inverterHeaderAddress,
+                dataAddress:
+                  inverterHeaderAddress + 2,
+                length:
+                  InverterModel103.MODEL_LENGTH,
+              },
+              {
+                id:
+                  CommonModel.MODEL_ID,
+                headerAddress:
+                  embeddedCommonHeaderAddress,
+                dataAddress:
+                  embeddedCommonHeaderAddress + 2,
+                length:
+                  CommonModel.MODEL_LENGTH_WITHOUT_PAD,
+              },
+              {
+                id:
+                  MeterModel203.MODEL_ID,
+                headerAddress:
+                  meterHeaderAddress,
+                dataAddress:
+                  meterHeaderAddress + 2,
+                length:
+                  MeterModel203.MODEL_LENGTH,
+              },
+            ],
+          );
+
+        const device =
+          SunSpecDeviceFactory.create(
+            result,
+          );
+
+        expect(
+          device.size(),
+        ).toBe(
+          3,
+        );
+
+        expect(
+          device.hasModel(
+            CommonModel.MODEL_ID,
+          ),
+        ).toBe(
+          true,
+        );
+
+        expect(
+          device.hasModel(
+            InverterModel103.MODEL_ID,
+          ),
+        ).toBe(
+          true,
+        );
+
+        expect(
+          device.hasModel(
+            MeterModel203.MODEL_ID,
+          ),
+        ).toBe(
+          true,
+        );
+
+        expect(
+          device.meter,
+        ).toBeDefined();
 
       },
     );
@@ -489,6 +649,10 @@ describe(
       'rejects an invalid Common Model length',
       () => {
 
+        const invalidLength =
+          CommonModel.MODEL_LENGTH_WITHOUT_PAD
+          - 1;
+
         const result =
           new SunSpecDiscoveryResult(
             1,
@@ -502,7 +666,7 @@ describe(
                 dataAddress:
                   40004,
                 length:
-                  CommonModel.MODEL_LENGTH - 1,
+                  invalidLength,
               },
             ],
           );
@@ -513,10 +677,11 @@ describe(
               result,
             ),
         ).toThrow(
-          `Invalid length for SunSpec model ` +
+          'Invalid length for SunSpec model ' +
           `${CommonModel.MODEL_ID}: expected ` +
+          `${CommonModel.MODEL_LENGTH_WITHOUT_PAD} or ` +
           `${CommonModel.MODEL_LENGTH}, received ` +
-          `${CommonModel.MODEL_LENGTH - 1}.`,
+          `${invalidLength}.`,
         );
 
       },
@@ -550,7 +715,7 @@ describe(
               result,
             ),
         ).toThrow(
-          `Invalid length for SunSpec model ` +
+          'Invalid length for SunSpec model ' +
           `${InverterModel103.MODEL_ID}`,
         );
 
@@ -585,7 +750,7 @@ describe(
               result,
             ),
         ).toThrow(
-          `Invalid length for SunSpec model ` +
+          'Invalid length for SunSpec model ' +
           `${NameplateModel120.MODEL_ID}`,
         );
 

@@ -9,7 +9,7 @@ export class ModbusExceptionResponseError extends ModbusError {
     public readonly exceptionCode: number,
   ) {
     super(
-      `Modbus exception response received. ` +
+      'Modbus exception response received. ' +
       `Function code: ${functionCode}, ` +
       `exception code: ${exceptionCode}.`,
     );

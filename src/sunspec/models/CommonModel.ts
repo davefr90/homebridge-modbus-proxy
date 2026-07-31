@@ -24,7 +24,14 @@ export class CommonModel {
   public static readonly MODEL_ID = 1;
 
   /**
-   * Number of data registers in the Common Model.
+   * Number of data registers in the Common Model
+   * without the optional final pad register.
+   */
+  public static readonly MODEL_LENGTH_WITHOUT_PAD = 65;
+
+  /**
+   * Number of data registers in the Common Model
+   * including the optional final pad register.
    */
   public static readonly MODEL_LENGTH = 66;
 
@@ -45,7 +52,7 @@ export class CommonModel {
   public static create(
     unitId = 1,
     baseAddress =
-      CommonModel.DEFAULT_BASE_ADDRESS,
+    CommonModel.DEFAULT_BASE_ADDRESS,
   ): SunSpecModel {
 
     if (

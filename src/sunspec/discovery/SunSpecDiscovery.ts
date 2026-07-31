@@ -151,8 +151,8 @@ export class SunSpecDiscovery {
           error instanceof Error
             ? error
             : new Error(
-                String(error),
-              ),
+              String(error),
+            ),
         );
 
       }
@@ -240,7 +240,7 @@ export class SunSpecDiscovery {
         this.maxModels
       ) {
         throw new Error(
-          `SunSpec discovery exceeded the maximum of ` +
+          'SunSpec discovery exceeded the maximum of ' +
           `${this.maxModels} models.`,
         );
       }
@@ -342,7 +342,7 @@ export class SunSpecDiscovery {
         || value > 0xffff
       ) {
         throw new Error(
-          `Invalid Modbus register value at address ` +
+          'Invalid Modbus register value at address ' +
           `${address + index}: ${value}`,
         );
       }
@@ -384,7 +384,7 @@ export class SunSpecDiscovery {
           );
 
       throw new Error(
-        `Invalid SunSpec identifier at address ` +
+        'Invalid SunSpec identifier at address ' +
         `${baseAddress}: ${actualIdentifier}`,
       );
     }
@@ -439,7 +439,7 @@ export class SunSpecDiscovery {
     ) {
       throw new Error(
         `SunSpec model ${modelId} exceeds the ` +
-        `Modbus address range.`,
+        'Modbus address range.',
       );
     }
 

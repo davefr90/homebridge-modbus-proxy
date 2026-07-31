@@ -23,9 +23,9 @@ describe(
       client = new ModbusClient(
         '127.0.0.1',
         server.port,
-);
+      );
 
-await client.connect();
+      await client.connect();
 
     });
 

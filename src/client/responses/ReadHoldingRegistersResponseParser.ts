@@ -34,7 +34,7 @@ export class ReadHoldingRegistersResponseParser
 
     if (byteCount !== expectedByteCount) {
       throw new ModbusProtocolError(
-        `Invalid Read Holding Registers response: ` +
+        'Invalid Read Holding Registers response: ' +
         `received byte count ${byteCount}, ` +
         `expected ${expectedByteCount}.`,
       );
@@ -42,7 +42,7 @@ export class ReadHoldingRegistersResponseParser
 
     if (frame.data.length !== byteCount + 1) {
       throw new ModbusProtocolError(
-        `Invalid Read Holding Registers response length: ` +
+        'Invalid Read Holding Registers response length: ' +
         `received ${frame.data.length} data bytes, ` +
         `expected ${byteCount + 1}.`,
       );

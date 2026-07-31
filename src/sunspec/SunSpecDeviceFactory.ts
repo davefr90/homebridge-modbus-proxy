@@ -145,129 +145,130 @@ export class SunSpecDeviceFactory {
       discoveredModel.id
     ) {
 
-      case CommonModel.MODEL_ID: {
+    case CommonModel.MODEL_ID: {
 
-        /*
+      /*
          * SolarEdge exposes another Common Model directly
          * before its embedded meter. The current public API
          * represents the primary device Common Model only.
          */
-        if (
-          container.has(
-            CommonModel.MODEL_ID,
-          )
-        ) {
-          return;
-        }
+      if (
+        container.has(
+          CommonModel.MODEL_ID,
+        )
+      ) {
+        return;
+      }
 
-        SunSpecDeviceFactory
-          .validateModelLength(
-            discoveredModel,
-            CommonModel.MODEL_LENGTH,
-          );
+      SunSpecDeviceFactory
+        .validateModelLength(
+          discoveredModel,
+          CommonModel.MODEL_LENGTH_WITHOUT_PAD,
+          CommonModel.MODEL_LENGTH,
+        );
 
-        const model =
+      const model =
           CommonModel.create(
             discoveryResult.unitId,
             discoveryResult.baseAddress,
           );
 
-        container.add(
-          model,
+      container.add(
+        model,
+      );
+
+      registerMap.addMap(
+        'common',
+        model.registerMap,
+      );
+
+      return;
+
+    }
+
+    case InverterModel103.MODEL_ID: {
+
+      SunSpecDeviceFactory
+        .validateModelLength(
+          discoveredModel,
+          InverterModel103.MODEL_LENGTH,
         );
 
-        registerMap.addMap(
-          'common',
-          model.registerMap,
-        );
-
-        return;
-
-      }
-
-      case InverterModel103.MODEL_ID: {
-
-        SunSpecDeviceFactory
-          .validateModelLength(
-            discoveredModel,
-            InverterModel103.MODEL_LENGTH,
-          );
-
-        const model =
+      const model =
           InverterModel103.create(
             discoveryResult.unitId,
             discoveredModel.headerAddress,
           );
 
-        container.add(
-          model,
+      container.add(
+        model,
+      );
+
+      registerMap.addMap(
+        'inverter',
+        model.registerMap,
+      );
+
+      return;
+
+    }
+
+    case NameplateModel120.MODEL_ID: {
+
+      SunSpecDeviceFactory
+        .validateModelLength(
+          discoveredModel,
+          NameplateModel120.MODEL_LENGTH,
         );
 
-        registerMap.addMap(
-          'inverter',
-          model.registerMap,
-        );
-
-        return;
-
-      }
-
-      case NameplateModel120.MODEL_ID: {
-
-        SunSpecDeviceFactory
-          .validateModelLength(
-            discoveredModel,
-            NameplateModel120.MODEL_LENGTH,
-          );
-
-        const model =
+      const model =
           NameplateModel120.create(
             discoveryResult.unitId,
             discoveredModel.headerAddress,
           );
 
-        container.add(
-          model,
+      container.add(
+        model,
+      );
+
+      registerMap.addMap(
+        'nameplate',
+        model.registerMap,
+      );
+
+      return;
+
+    }
+
+    case MeterModel203.MODEL_ID: {
+
+      SunSpecDeviceFactory
+        .validateModelLength(
+          discoveredModel,
+          MeterModel203.MODEL_LENGTH,
         );
 
-        registerMap.addMap(
-          'nameplate',
-          model.registerMap,
-        );
-
-        return;
-
-      }
-
-      case MeterModel203.MODEL_ID: {
-
-        SunSpecDeviceFactory
-          .validateModelLength(
-            discoveredModel,
-            MeterModel203.MODEL_LENGTH,
-          );
-
-        const model =
+      const model =
           MeterModel203.create(
             discoveryResult.unitId,
             discoveredModel.headerAddress,
           );
 
-        container.add(
-          model,
-        );
+      container.add(
+        model,
+      );
 
-        registerMap.addMap(
-          'meter',
-          model.registerMap,
-        );
+      registerMap.addMap(
+        'meter',
+        model.registerMap,
+      );
 
-        return;
+      return;
 
-      }
+    }
 
-      default:
-        return;
+    default:
+      return;
 
     }
 
@@ -275,20 +276,28 @@ export class SunSpecDeviceFactory {
 
   private static validateModelLength(
     discoveredModel: SunSpecDiscoveredModel,
-    expectedLength: number,
+    ...expectedLengths: number[]
   ): void {
 
     if (
-      discoveredModel.length !==
-      expectedLength
+      expectedLengths.includes(
+        discoveredModel.length,
+      )
     ) {
-      throw new Error(
-        `Invalid length for SunSpec model ` +
-        `${discoveredModel.id}: expected ` +
-        `${expectedLength}, received ` +
-        `${discoveredModel.length}.`,
-      );
+      return;
     }
+
+    const expectedDescription =
+      expectedLengths.join(
+        ' or ',
+      );
+
+    throw new Error(
+      'Invalid length for SunSpec model ' +
+      `${discoveredModel.id}: expected ` +
+      `${expectedDescription}, received ` +
+      `${discoveredModel.length}.`,
+    );
 
   }
 

@@ -22,87 +22,87 @@ export class RegisterReader {
 
     switch (definition.function) {
 
-      case PollFunction.ReadHoldingRegisters: {
+    case PollFunction.ReadHoldingRegisters: {
 
-        const values =
+      const values =
           await this.client.readHoldingRegisters(
             definition.unitId,
             definition.address,
             definition.length,
           );
 
-        return this.converter.convert(
-          definition,
-          Uint16Array.from(values),
-        );
+      return this.converter.convert(
+        definition,
+        Uint16Array.from(values),
+      );
 
-      }
+    }
 
-      case PollFunction.ReadInputRegisters: {
+    case PollFunction.ReadInputRegisters: {
 
-        const values =
+      const values =
           await this.client.readInputRegisters(
             definition.unitId,
             definition.address,
             definition.length,
           );
 
-        return this.converter.convert(
-          definition,
-          Uint16Array.from(values),
-        );
+      return this.converter.convert(
+        definition,
+        Uint16Array.from(values),
+      );
 
-      }
+    }
 
-      case PollFunction.ReadCoils: {
+    case PollFunction.ReadCoils: {
 
-        const values =
+      const values =
           await this.client.readCoils(
             definition.unitId,
             definition.address,
             definition.length,
           );
 
-        const value =
+      const value =
           values[0];
 
-        if (value === undefined) {
-          throw new Error(
-            `No coil value returned for register: ${definition.name}`,
-          );
-        }
-
-        return value;
-
+      if (value === undefined) {
+        throw new Error(
+          `No coil value returned for register: ${definition.name}`,
+        );
       }
 
-      case PollFunction.ReadDiscreteInputs: {
+      return value;
 
-        const values =
+    }
+
+    case PollFunction.ReadDiscreteInputs: {
+
+      const values =
           await this.client.readDiscreteInputs(
             definition.unitId,
             definition.address,
             definition.length,
           );
 
-        const value =
+      const value =
           values[0];
 
-        if (value === undefined) {
-          throw new Error(
-            `No discrete input value returned for register: ${definition.name}`,
-          );
-        }
-
-        return value;
-
+      if (value === undefined) {
+        throw new Error(
+          `No discrete input value returned for register: ${definition.name}`,
+        );
       }
 
-      default:
+      return value;
 
-        throw new Error(
-          `Unsupported poll function: ${definition.function}`,
-        );
+    }
+
+    default:
+
+      throw new Error(
+        `Unsupported poll function: ${definition.function}`,
+      );
 
     }
 

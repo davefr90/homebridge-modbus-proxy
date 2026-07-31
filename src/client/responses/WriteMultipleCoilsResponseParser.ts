@@ -32,7 +32,7 @@ export class WriteMultipleCoilsResponseParser
 
     if (frame.data.length !== 4) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Coils response length: ` +
+        'Invalid Write Multiple Coils response length: ' +
         `received ${frame.data.length} data bytes, expected 4.`,
       );
     }
@@ -49,14 +49,14 @@ export class WriteMultipleCoilsResponseParser
 
     if (receivedAddress !== expectedAddress) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Coils response address: ` +
+        'Invalid Write Multiple Coils response address: ' +
         `received ${receivedAddress}, expected ${expectedAddress}.`,
       );
     }
 
     if (receivedQuantity !== expectedQuantity) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Coils response quantity: ` +
+        'Invalid Write Multiple Coils response quantity: ' +
         `received ${receivedQuantity}, expected ${expectedQuantity}.`,
       );
     }

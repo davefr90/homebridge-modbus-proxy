@@ -129,7 +129,7 @@ describe('DeviceManager', () => {
           name: 'Duplicate Device',
         }),
       );
-    }).toThrow("Device 'device-1' already exists.");
+    }).toThrow('Device \'device-1\' already exists.');
   });
 
   it('updates the size when devices are added and removed', () => {

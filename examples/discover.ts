@@ -238,8 +238,8 @@ main()
           ? error.stack
             ?? error.message
           : String(
-              error,
-            );
+            error,
+          );
 
       console.error(
         '\nDiscovery failed:',

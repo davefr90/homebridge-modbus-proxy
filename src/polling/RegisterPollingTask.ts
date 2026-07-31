@@ -18,7 +18,7 @@ import type {
  * Polls one contiguous block of Modbus values.
  */
 export class RegisterPollingTask
-  implements PollingTask<PollResult> {
+implements PollingTask<PollResult> {
 
   public constructor(
     private readonly client:
@@ -83,54 +83,54 @@ export class RegisterPollingTask
   private async readValues():
     Promise<Uint16Array> {
     switch (this.functionCode) {
-      case PollFunction.ReadHoldingRegisters:
-        return this.client.readHoldingRegisters(
-          this.unitId,
-          this.startAddress,
-          this.quantity,
-        );
+    case PollFunction.ReadHoldingRegisters:
+      return this.client.readHoldingRegisters(
+        this.unitId,
+        this.startAddress,
+        this.quantity,
+      );
 
-      case PollFunction.ReadInputRegisters:
-        return this.client.readInputRegisters(
-          this.unitId,
-          this.startAddress,
-          this.quantity,
-        );
+    case PollFunction.ReadInputRegisters:
+      return this.client.readInputRegisters(
+        this.unitId,
+        this.startAddress,
+        this.quantity,
+      );
 
-      case PollFunction.ReadCoils: {
-        const values =
+    case PollFunction.ReadCoils: {
+      const values =
           await this.client.readCoils(
             this.unitId,
             this.startAddress,
             this.quantity,
           );
 
-        return Uint16Array.from(
-          values,
-          (value) =>
-            value ? 1 : 0,
-        );
-      }
+      return Uint16Array.from(
+        values,
+        (value) =>
+          value ? 1 : 0,
+      );
+    }
 
-      case PollFunction.ReadDiscreteInputs: {
-        const values =
+    case PollFunction.ReadDiscreteInputs: {
+      const values =
           await this.client.readDiscreteInputs(
             this.unitId,
             this.startAddress,
             this.quantity,
           );
 
-        return Uint16Array.from(
-          values,
-          (value) =>
-            value ? 1 : 0,
-        );
-      }
+      return Uint16Array.from(
+        values,
+        (value) =>
+          value ? 1 : 0,
+      );
+    }
 
-      default:
-        throw new RangeError(
-          `Unsupported polling function code: ${this.functionCode}`,
-        );
+    default:
+      throw new RangeError(
+        `Unsupported polling function code: ${this.functionCode}`,
+      );
     }
   }
 }

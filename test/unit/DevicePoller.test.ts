@@ -19,7 +19,7 @@ describe(
     function createTask(): {
       task: PollingTask;
       execute: ReturnType<typeof vi.fn>;
-    } {
+      } {
       const execute =
         vi.fn().mockResolvedValue(undefined);
 

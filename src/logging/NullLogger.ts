@@ -7,8 +7,7 @@ import { Logger } from './Logger.js';
  * is injected.
  */
 export class NullLogger
-  implements Logger
-{
+implements Logger {
   public debug(
     _message: string,
   ): void {}

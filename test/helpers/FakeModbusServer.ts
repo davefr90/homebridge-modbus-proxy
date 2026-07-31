@@ -76,7 +76,7 @@ export class FakeModbusServer {
  * Incremental Modbus TCP stream parser.
  */
   private readonly frameParser =
-  new ModbusTcpFrameParser();
+    new ModbusTcpFrameParser();
 
   /**
    * Returns the TCP port on which the server is listening.
@@ -109,104 +109,104 @@ export class FakeModbusServer {
  * A specific port can be supplied when a test needs to
  * restart the server on the same endpoint.
  */
-public async start(
-  port = 0,
-): Promise<void> {
-  if (this.server !== undefined) {
-    throw new Error(
-      'FakeModbusServer is already running.',
+  public async start(
+    port = 0,
+  ): Promise<void> {
+    if (this.server !== undefined) {
+      throw new Error(
+        'FakeModbusServer is already running.',
+      );
+    }
+
+    this.server = net.createServer(
+      (socket) => {
+        this.handleConnection(socket);
+      },
     );
-  }
 
-  this.server = net.createServer(
-    (socket) => {
-      this.handleConnection(socket);
-    },
-  );
+    await new Promise<void>(
+      (
+        resolve,
+        reject,
+      ) => {
+        const server = this.server;
 
-  await new Promise<void>(
-    (
-      resolve,
-      reject,
-    ) => {
-      const server = this.server;
-
-      if (server === undefined) {
-        reject(
-          new Error(
-            'FakeModbusServer could not be created.',
-          ),
-        );
-
-        return;
-      }
-
-      /**
-       * Handles an error that occurs while starting
-       * the TCP server.
-       */
-      const handleStartError = (
-        error: Error,
-      ): void => {
-        server.off(
-          'listening',
-          handleListening,
-        );
-
-        this.server = undefined;
-
-        reject(error);
-      };
-
-      /**
-       * Handles the successful server start.
-       */
-      const handleListening = (): void => {
-        server.off(
-          'error',
-          handleStartError,
-        );
-
-        const address = server.address();
-
-        if (
-          address === null ||
-          typeof address === 'string'
-        ) {
-          this.server = undefined;
-
+        if (server === undefined) {
           reject(
             new Error(
-              'Unable to determine listening port.',
+              'FakeModbusServer could not be created.',
             ),
           );
 
           return;
         }
 
-        this.listeningPort =
+        /**
+       * Handles an error that occurs while starting
+       * the TCP server.
+       */
+        const handleStartError = (
+          error: Error,
+        ): void => {
+          server.off(
+            'listening',
+            handleListening,
+          );
+
+          this.server = undefined;
+
+          reject(error);
+        };
+
+        /**
+       * Handles the successful server start.
+       */
+        const handleListening = (): void => {
+          server.off(
+            'error',
+            handleStartError,
+          );
+
+          const address = server.address();
+
+          if (
+            address === null ||
+          typeof address === 'string'
+          ) {
+            this.server = undefined;
+
+            reject(
+              new Error(
+                'Unable to determine listening port.',
+              ),
+            );
+
+            return;
+          }
+
+          this.listeningPort =
           address.port;
 
-        resolve();
-      };
+          resolve();
+        };
 
-      server.once(
-        'error',
-        handleStartError,
-      );
+        server.once(
+          'error',
+          handleStartError,
+        );
 
-      server.once(
-        'listening',
-        handleListening,
-      );
+        server.once(
+          'listening',
+          handleListening,
+        );
 
-      server.listen(
-        port,
-        '127.0.0.1',
-      );
-    },
-  );
-}
+        server.listen(
+          port,
+          '127.0.0.1',
+        );
+      },
+    );
+  }
 
 
   /**
@@ -315,25 +315,25 @@ public async start(
  * Decodes incoming TCP stream data.
  */
   private handleData(
-  socket: Socket,
-  data: Buffer,
+    socket: Socket,
+    data: Buffer,
   ): void {
-  try {
-    const frames =
+    try {
+      const frames =
       this.frameParser.push(data);
 
-    for (const frame of frames) {
+      for (const frame of frames) {
       /*
        * Store the frame for tests that inspect the
        * received request.
        */
-      this.lastFrame = frame;
+        this.lastFrame = frame;
 
-      this.processFrame(
-        socket,
-        frame,
-      );
-    }
+        this.processFrame(
+          socket,
+          frame,
+        );
+      }
     } catch {
     /*
      * Invalid stream.
@@ -341,7 +341,7 @@ public async start(
      * Reset the parser so the next request starts
      * with a clean buffer.
      */
-    this.frameParser.reset();
+      this.frameParser.reset();
     }
   }
 
@@ -353,82 +353,82 @@ public async start(
     frame: ModbusTcpFrame,
   ): void {
     switch (frame.functionCode) {
-      case ModbusFunctionCode.ReadCoils:
-        this.handleReadCoils(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.ReadCoils:
+      this.handleReadCoils(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.ReadDiscreteInputs:
-        this.handleReadDiscreteInputs(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.ReadDiscreteInputs:
+      this.handleReadDiscreteInputs(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.ReadHoldingRegisters:
-        this.handleReadHoldingRegisters(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.ReadHoldingRegisters:
+      this.handleReadHoldingRegisters(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.ReadInputRegisters:
-        this.handleReadInputRegisters(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.ReadInputRegisters:
+      this.handleReadInputRegisters(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.WriteSingleCoil:
-        this.handleWriteSingleCoil(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.WriteSingleCoil:
+      this.handleWriteSingleCoil(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.WriteSingleRegister:
-        this.handleWriteSingleRegister(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.WriteSingleRegister:
+      this.handleWriteSingleRegister(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.WriteMultipleCoils:
-        this.handleWriteMultipleCoils(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.WriteMultipleCoils:
+      this.handleWriteMultipleCoils(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      case ModbusFunctionCode.WriteMultipleRegisters:
-        this.handleWriteMultipleRegisters(
-          socket,
-          frame,
-        );
+    case ModbusFunctionCode.WriteMultipleRegisters:
+      this.handleWriteMultipleRegisters(
+        socket,
+        frame,
+      );
 
-        break;
+      break;
 
-      default:
-        this.sendException(
-          socket,
-          frame,
-          ModbusExceptionCode.IllegalFunction,
-        );
+    default:
+      this.sendException(
+        socket,
+        frame,
+        ModbusExceptionCode.IllegalFunction,
+      );
 
-        break;
+      break;
     }
   }
 
-    /**
+  /**
    * Handles Function Code 0x01:
    * Read Coils.
    */

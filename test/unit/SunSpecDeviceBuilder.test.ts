@@ -173,9 +173,9 @@ describe(
           );
 
         expect(
-        derType.address,
-            ).toBe(
-            40124,
+          derType.address,
+        ).toBe(
+          40124,
         );
 
       },

@@ -33,7 +33,7 @@ export class CoilBank {
       value,
     );
   }
-    /**
+  /**
    * Writes multiple consecutive coils.
    */
   public writeCoils(

@@ -33,7 +33,7 @@ export class ReadInputRegistersResponseParser
 
     if (byteCount !== expectedByteCount) {
       throw new ModbusProtocolError(
-        `Invalid Read Input Registers response: ` +
+        'Invalid Read Input Registers response: ' +
         `received byte count ${byteCount}, ` +
         `expected ${expectedByteCount}.`,
       );
@@ -41,7 +41,7 @@ export class ReadInputRegistersResponseParser
 
     if (frame.data.length !== byteCount + 1) {
       throw new ModbusProtocolError(
-        `Invalid Read Input Registers response length: ` +
+        'Invalid Read Input Registers response length: ' +
         `received ${frame.data.length} data bytes, ` +
         `expected ${byteCount + 1}.`,
       );

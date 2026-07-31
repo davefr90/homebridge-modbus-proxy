@@ -149,12 +149,54 @@ export class MeterApi
 
   }
 
+  /**
+   * Reads signed total meter active power.
+   *
+   * Positive values represent grid export.
+   * Negative values represent grid import.
+   */
   public activePower():
     Promise<number> {
 
     return this.read(
       SunSpecProperty.Meter.ActivePower,
     );
+
+  }
+
+  /**
+   * Reads current grid import power.
+   *
+   * The returned value is always greater than or equal to zero.
+   */
+  public async importPower():
+    Promise<number> {
+
+    const activePower =
+      await this.activePower();
+
+    return MeterApi
+      .calculateImportPower(
+        activePower,
+      );
+
+  }
+
+  /**
+   * Reads current grid export power.
+   *
+   * The returned value is always greater than or equal to zero.
+   */
+  public async exportPower():
+    Promise<number> {
+
+    const activePower =
+      await this.activePower();
+
+    return MeterApi
+      .calculateExportPower(
+        activePower,
+      );
 
   }
 
@@ -322,6 +364,9 @@ export class MeterApi
 
   /**
    * Reads all currently exposed meter properties.
+   *
+   * Import and export power are derived from the signed
+   * active-power value without performing additional reads.
    */
   public async snapshot():
     Promise<MeterSnapshot> {
@@ -394,6 +439,16 @@ export class MeterApi
       this.events(),
     ]);
 
+    const importPower =
+      MeterApi.calculateImportPower(
+        activePower,
+      );
+
+    const exportPower =
+      MeterApi.calculateExportPower(
+        activePower,
+      );
+
     return {
       current,
       currentA,
@@ -409,6 +464,8 @@ export class MeterApi
       voltageCA,
       frequency,
       activePower,
+      importPower,
+      exportPower,
       activePowerA,
       activePowerB,
       activePowerC,
@@ -428,6 +485,36 @@ export class MeterApi
       importedEnergy,
       events,
     };
+
+  }
+
+  /**
+   * Converts signed meter power into non-negative
+   * grid import power.
+   */
+  private static calculateImportPower(
+    activePower: number,
+  ): number {
+
+    return Math.max(
+      0,
+      -activePower,
+    );
+
+  }
+
+  /**
+   * Converts signed meter power into non-negative
+   * grid export power.
+   */
+  private static calculateExportPower(
+    activePower: number,
+  ): number {
+
+    return Math.max(
+      0,
+      activePower,
+    );
 
   }
 

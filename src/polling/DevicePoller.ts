@@ -23,7 +23,7 @@ export class DevicePoller<TResult = unknown> {
     private readonly task:
       PollingTask<TResult>,
     private readonly intervalMs =
-      1000,
+    1000,
   ) {
     if (
       !Number.isFinite(intervalMs) ||

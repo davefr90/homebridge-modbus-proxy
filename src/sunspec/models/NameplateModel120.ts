@@ -35,7 +35,7 @@ export class NameplateModel120 {
   public static create(
     unitId = 1,
     modelStartAddress =
-      NameplateModel120.DEFAULT_MODEL_START_ADDRESS,
+    NameplateModel120.DEFAULT_MODEL_START_ADDRESS,
   ): SunSpecModel {
 
     if (

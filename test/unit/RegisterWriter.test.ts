@@ -229,127 +229,127 @@ describe(
     );
 
     it(
-  'writes multiple encoded registers using function code 16',
-  async () => {
+      'writes multiple encoded registers using function code 16',
+      async () => {
 
-    const validator = {
-      validate: vi.fn(),
-    } as unknown as ValueValidator;
+        const validator = {
+          validate: vi.fn(),
+        } as unknown as ValueValidator;
 
-    const encoder = {
-      encode: vi.fn(
-        () =>
-          new Uint16Array([
-            0x1234,
-            0x5678,
-          ]),
-      ),
-    } as unknown as ValueEncoder;
+        const encoder = {
+          encode: vi.fn(
+            () =>
+              new Uint16Array([
+                0x1234,
+                0x5678,
+              ]),
+          ),
+        } as unknown as ValueEncoder;
 
-    const writeSingleRegister =
+        const writeSingleRegister =
       vi.fn();
 
-    const writeMultipleRegisters =
+        const writeMultipleRegisters =
       vi.fn(
         async () => undefined,
       );
 
-    const client = {
-      writeSingleRegister,
-      writeMultipleRegisters,
-    } as unknown as ModbusClient;
+        const client = {
+          writeSingleRegister,
+          writeMultipleRegisters,
+        } as unknown as ModbusClient;
 
-    const writer =
+        const writer =
       new RegisterWriter(
         client,
         validator,
         encoder,
       );
 
-    await writer.write(
-      definition(
-        RegisterDataType.Uint32,
-        2,
-      ),
-      0x12345678,
+        await writer.write(
+          definition(
+            RegisterDataType.Uint32,
+            2,
+          ),
+          0x12345678,
+        );
+
+        expect(
+          writeSingleRegister,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          writeMultipleRegisters,
+        ).toHaveBeenCalledTimes(1);
+
+        expect(
+          writeMultipleRegisters,
+        ).toHaveBeenCalledWith(
+          2,
+          100,
+          [
+            0x1234,
+            0x5678,
+          ],
+        );
+
+      },
     );
-
-    expect(
-      writeSingleRegister,
-    ).not.toHaveBeenCalled();
-
-    expect(
-      writeMultipleRegisters,
-    ).toHaveBeenCalledTimes(1);
-
-    expect(
-      writeMultipleRegisters,
-    ).toHaveBeenCalledWith(
-      2,
-      100,
-      [
-        0x1234,
-        0x5678,
-      ],
-    );
-
-  },
-);
 
     it(
-  'forwards multiple register write errors',
-  async () => {
+      'forwards multiple register write errors',
+      async () => {
 
-    const error =
+        const error =
       new Error(
         'Write failed.',
       );
 
-    const validator = {
-      validate: vi.fn(),
-    } as unknown as ValueValidator;
+        const validator = {
+          validate: vi.fn(),
+        } as unknown as ValueValidator;
 
-    const encoder = {
-      encode: vi.fn(
-        () =>
-          new Uint16Array([
-            1,
-            2,
-          ]),
-      ),
-    } as unknown as ValueEncoder;
+        const encoder = {
+          encode: vi.fn(
+            () =>
+              new Uint16Array([
+                1,
+                2,
+              ]),
+          ),
+        } as unknown as ValueEncoder;
 
-    const client = {
-      writeSingleRegister:
+        const client = {
+          writeSingleRegister:
         vi.fn(),
 
-      writeMultipleRegisters:
+          writeMultipleRegisters:
         vi.fn(
           async () => {
             throw error;
           },
         ),
-    } as unknown as ModbusClient;
+        } as unknown as ModbusClient;
 
-    const writer =
+        const writer =
       new RegisterWriter(
         client,
         validator,
         encoder,
       );
 
-    await expect(
-      writer.write(
-        definition(
-          RegisterDataType.Uint32,
-          2,
-        ),
-        123,
-      ),
-    ).rejects.toBe(error);
+        await expect(
+          writer.write(
+            definition(
+              RegisterDataType.Uint32,
+              2,
+            ),
+            123,
+          ),
+        ).rejects.toBe(error);
 
-  },
-);
+      },
+    );
 
     it(
       'forwards Modbus client write errors',

@@ -40,8 +40,8 @@ describe(
         ...(scaleProperty === undefined
           ? {}
           : {
-              scaleProperty,
-            }),
+            scaleProperty,
+          }),
 
       });
 

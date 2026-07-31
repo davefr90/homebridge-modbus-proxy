@@ -226,7 +226,7 @@ export class SunSpecClient {
   public get options():
     Readonly<
       Required<SunSpecClientOptions>
-    > {
+      > {
 
     return this.clientOptions;
 

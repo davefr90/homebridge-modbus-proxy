@@ -103,44 +103,44 @@ describe(
       },
     );
     it(
-  'uses register polling interval',
-  () => {
+      'uses register polling interval',
+      () => {
 
-    const customGroup: RegisterGroup = {
+        const customGroup: RegisterGroup = {
 
-      ...group,
+          ...group,
 
-      registers: [
+          registers: [
 
-        {
+            {
 
-          ...group.registers[0],
+              ...group.registers[0],
 
-          pollIntervalMs: 2500,
+              pollIntervalMs: 2500,
 
-        },
+            },
 
-      ],
+          ],
 
-    };
+        };
 
-    const plan =
+        const plan =
       builder.build([
         customGroup,
       ]);
 
-    expect(
-      plan[0].intervalMs,
-    ).toBe(2500);
+        expect(
+          plan[0].intervalMs,
+        ).toBe(2500);
 
-  },
-);
+      },
+    );
 
-it(
-  'falls back to default interval',
-  () => {
+    it(
+      'falls back to default interval',
+      () => {
 
-    const plan =
+        const plan =
       builder.build(
         [
           group,
@@ -148,11 +148,11 @@ it(
         5000,
       );
 
-    expect(
-      plan[0].intervalMs,
-    ).toBe(5000);
+        expect(
+          plan[0].intervalMs,
+        ).toBe(5000);
 
+      },
+    );
   },
-);    
-    },
 );

@@ -32,7 +32,7 @@ export class WriteMultipleRegistersResponseParser
 
     if (frame.data.length !== 4) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Registers response length: ` +
+        'Invalid Write Multiple Registers response length: ' +
         `received ${frame.data.length} data bytes, expected 4.`,
       );
     }
@@ -42,14 +42,14 @@ export class WriteMultipleRegistersResponseParser
 
     if (receivedAddress !== expectedAddress) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Registers response address: ` +
+        'Invalid Write Multiple Registers response address: ' +
         `received ${receivedAddress}, expected ${expectedAddress}.`,
       );
     }
 
     if (receivedQuantity !== expectedQuantity) {
       throw new ModbusProtocolError(
-        `Invalid Write Multiple Registers response quantity: ` +
+        'Invalid Write Multiple Registers response quantity: ' +
         `received ${receivedQuantity}, expected ${expectedQuantity}.`,
       );
     }

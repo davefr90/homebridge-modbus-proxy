@@ -16,18 +16,18 @@ describe(
       () => {
         const definition:
           RegisterDefinition = {
-          unitId: 1,
-          function:
+            unitId: 1,
+            function:
             PollFunction.ReadHoldingRegisters,
-          address: 40001,
-          length: 2,
-          dataType:
+            address: 40001,
+            length: 2,
+            dataType:
             RegisterDataType.Float32,
-          scale: 0.1,
-          writable: true,
-          name: 'Battery Voltage',
-          unit: 'V',
-        };
+            scale: 0.1,
+            writable: true,
+            name: 'Battery Voltage',
+            unit: 'V',
+          };
 
         expect(
           definition.name,

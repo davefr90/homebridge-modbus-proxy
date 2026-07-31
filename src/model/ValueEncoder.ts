@@ -47,112 +47,112 @@ export class ValueEncoder {
 
     switch (definition.dataType) {
 
-      case RegisterDataType.Boolean:
-        return new Uint16Array([
-          value ? 1 : 0,
-        ]);
+    case RegisterDataType.Boolean:
+      return new Uint16Array([
+        value ? 1 : 0,
+      ]);
 
-      case RegisterDataType.Uint16:
-        return new Uint16Array([
-          Number(value),
-        ]);
+    case RegisterDataType.Uint16:
+      return new Uint16Array([
+        Number(value),
+      ]);
 
-      case RegisterDataType.Int16:
-        return new Uint16Array([
-          Number(value) & 0xFFFF,
-        ]);
+    case RegisterDataType.Int16:
+      return new Uint16Array([
+        Number(value) & 0xFFFF,
+      ]);
 
-      case RegisterDataType.Uint32: {
+    case RegisterDataType.Uint32: {
 
-        const number =
+      const number =
           Number(value);
 
-        return new Uint16Array([
-          (number >>> 16) & 0xFFFF,
-          number & 0xFFFF,
-        ]);
+      return new Uint16Array([
+        (number >>> 16) & 0xFFFF,
+        number & 0xFFFF,
+      ]);
 
-      }
+    }
 
-      case RegisterDataType.Int32: {
+    case RegisterDataType.Int32: {
 
-        const number =
+      const number =
           Number(value);
 
-        return new Uint16Array([
-          (number >> 16) & 0xFFFF,
-          number & 0xFFFF,
-        ]);
+      return new Uint16Array([
+        (number >> 16) & 0xFFFF,
+        number & 0xFFFF,
+      ]);
 
-      }
+    }
 
-      case RegisterDataType.Float32: {
+    case RegisterDataType.Float32: {
 
-        const buffer =
+      const buffer =
           new ArrayBuffer(4);
 
-        const view =
+      const view =
           new DataView(buffer);
 
-        view.setFloat32(
+      view.setFloat32(
+        0,
+        Number(value),
+        false,
+      );
+
+      return new Uint16Array([
+        view.getUint16(
           0,
-          Number(value),
           false,
-        );
+        ),
+        view.getUint16(
+          2,
+          false,
+        ),
+      ]);
 
-        return new Uint16Array([
-          view.getUint16(
-            0,
-            false,
-          ),
-          view.getUint16(
-            2,
-            false,
-          ),
-        ]);
+    }
 
-      }
+    case RegisterDataType.String: {
 
-      case RegisterDataType.String: {
-
-  const text =
+      const text =
     String(value);
 
-  const registers =
+      const registers =
     new Uint16Array(definition.length);
 
-  let registerIndex =
+      let registerIndex =
     0;
 
-  for (
-    let i = 0;
-    i < text.length &&
+      for (
+        let i = 0;
+        i < text.length &&
     registerIndex < registers.length;
-    i += 2
-  ) {
+        i += 2
+      ) {
 
-    const high =
+        const high =
       text.charCodeAt(i);
 
-    const low =
+        const low =
       i + 1 < text.length
         ? text.charCodeAt(i + 1)
         : 0;
 
-    registers[registerIndex++] =
+        registers[registerIndex++] =
       ((high & 0xFF) << 8) |
       (low & 0xFF);
 
-  }
+      }
 
-  return registers;
+      return registers;
 
-}
+    }
 
-      default:
-        throw new Error(
-          `Unsupported data type: ${definition.dataType}`,
-        );
+    default:
+      throw new Error(
+        `Unsupported data type: ${definition.dataType}`,
+      );
 
     }
 

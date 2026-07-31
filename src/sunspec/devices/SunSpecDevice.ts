@@ -101,8 +101,8 @@ export class SunSpecDevice {
         MeterModel203.MODEL_ID,
       )
         ? new MeterApi(
-            this,
-          )
+          this,
+        )
         : undefined;
 
   }
@@ -152,14 +152,14 @@ export class SunSpecDevice {
       )
         ? this.nameplate.snapshot()
         : Promise.resolve(
-            undefined,
-          );
+          undefined,
+        );
 
     const meterPromise =
       this.meter === undefined
         ? Promise.resolve(
-            undefined,
-          )
+          undefined,
+        )
         : this.meter.snapshot();
 
     const [
@@ -181,14 +181,14 @@ export class SunSpecDevice {
       ...(nameplate === undefined
         ? {}
         : {
-            nameplate,
-          }),
+          nameplate,
+        }),
 
       ...(meter === undefined
         ? {}
         : {
-            meter,
-          }),
+          meter,
+        }),
     };
 
   }

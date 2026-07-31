@@ -7,7 +7,7 @@ import { RegisterCacheManager } from './RegisterCacheManager.js';
  * successful poll results in the register cache.
  */
 export class CachingPollingTask
-  implements PollingTask<PollResult> {
+implements PollingTask<PollResult> {
 
   public constructor(
     private readonly task:

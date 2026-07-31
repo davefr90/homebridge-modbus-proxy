@@ -43,13 +43,28 @@ export interface MeterSnapshot {
     number;
 
   /**
-   * Signed total meter power.
+   * Signed total meter active power.
    *
-   * The direction represented by the sign will be verified
-   * against the real SolarEdge installation before dedicated
-   * importPower and exportPower properties are introduced.
+   * Positive values represent grid export.
+   * Negative values represent grid import.
    */
   readonly activePower:
+    number;
+
+  /**
+   * Current grid import power.
+   *
+   * The value is always greater than or equal to zero.
+   */
+  readonly importPower:
+    number;
+
+  /**
+   * Current grid export power.
+   *
+   * The value is always greater than or equal to zero.
+   */
+  readonly exportPower:
     number;
 
   readonly activePowerA:
