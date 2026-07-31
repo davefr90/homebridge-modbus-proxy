@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import type {
+  InverterSnapshot,
+} from '../models/snapshots/InverterSnapshot.js';
+
 import {
   PropertyApi,
 } from './PropertyApi.js';
@@ -270,6 +274,81 @@ export class InverterApi
     return this.read(
       SunSpecProperty.Inverter.Status,
     );
+
+  }
+
+  /**
+   * Reads all currently exposed inverter properties.
+   */
+  public async snapshot():
+    Promise<InverterSnapshot> {
+
+    const [
+      acCurrent,
+      acCurrentA,
+      acCurrentB,
+      acCurrentC,
+      acVoltageAB,
+      acVoltageBC,
+      acVoltageCA,
+      acVoltageAN,
+      acVoltageBN,
+      acVoltageCN,
+      acPower,
+      frequency,
+      apparentPower,
+      reactivePower,
+      powerFactor,
+      dcCurrent,
+      dcVoltage,
+      dcPower,
+      temperature,
+      status,
+    ] = await Promise.all([
+      this.acCurrent(),
+      this.acCurrentA(),
+      this.acCurrentB(),
+      this.acCurrentC(),
+      this.acVoltageAB(),
+      this.acVoltageBC(),
+      this.acVoltageCA(),
+      this.acVoltageAN(),
+      this.acVoltageBN(),
+      this.acVoltageCN(),
+      this.acPower(),
+      this.frequency(),
+      this.apparentPower(),
+      this.reactivePower(),
+      this.powerFactor(),
+      this.dcCurrent(),
+      this.dcVoltage(),
+      this.dcPower(),
+      this.temperature(),
+      this.status(),
+    ]);
+
+    return {
+      acCurrent,
+      acCurrentA,
+      acCurrentB,
+      acCurrentC,
+      acVoltageAB,
+      acVoltageBC,
+      acVoltageCA,
+      acVoltageAN,
+      acVoltageBN,
+      acVoltageCN,
+      acPower,
+      frequency,
+      apparentPower,
+      reactivePower,
+      powerFactor,
+      dcCurrent,
+      dcVoltage,
+      dcPower,
+      temperature,
+      status,
+    };
 
   }
 

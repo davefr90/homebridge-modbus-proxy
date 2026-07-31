@@ -95,17 +95,107 @@ export interface SunSpecPropertyTypes {
   [SunSpecProperty.Nameplate.MaximumVoltage]:
     number;
 
+  [SunSpecProperty.Meter.Current]:
+    number;
+
+  [SunSpecProperty.Meter.CurrentA]:
+    number;
+
+  [SunSpecProperty.Meter.CurrentB]:
+    number;
+
+  [SunSpecProperty.Meter.CurrentC]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageLineNeutral]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageAN]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageBN]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageCN]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageLineLine]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageAB]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageBC]:
+    number;
+
+  [SunSpecProperty.Meter.VoltageCA]:
+    number;
+
+  [SunSpecProperty.Meter.Frequency]:
+    number;
+
+  [SunSpecProperty.Meter.ActivePower]:
+    number;
+
+  [SunSpecProperty.Meter.ActivePowerA]:
+    number;
+
+  [SunSpecProperty.Meter.ActivePowerB]:
+    number;
+
+  [SunSpecProperty.Meter.ActivePowerC]:
+    number;
+
+  [SunSpecProperty.Meter.ApparentPower]:
+    number;
+
+  [SunSpecProperty.Meter.ApparentPowerA]:
+    number;
+
+  [SunSpecProperty.Meter.ApparentPowerB]:
+    number;
+
+  [SunSpecProperty.Meter.ApparentPowerC]:
+    number;
+
+  [SunSpecProperty.Meter.ReactivePower]:
+    number;
+
+  [SunSpecProperty.Meter.ReactivePowerA]:
+    number;
+
+  [SunSpecProperty.Meter.ReactivePowerB]:
+    number;
+
+  [SunSpecProperty.Meter.ReactivePowerC]:
+    number;
+
+  [SunSpecProperty.Meter.PowerFactor]:
+    number;
+
+  [SunSpecProperty.Meter.PowerFactorA]:
+    number;
+
+  [SunSpecProperty.Meter.PowerFactorB]:
+    number;
+
+  [SunSpecProperty.Meter.PowerFactorC]:
+    number;
+
+  [SunSpecProperty.Meter.ExportedEnergy]:
+    number;
+
+  [SunSpecProperty.Meter.ImportedEnergy]:
+    number;
+
+  [SunSpecProperty.Meter.Events]:
+    number;
+
 }
 
-/**
- * Union of all supported logical SunSpec property names.
- */
 export type SunSpecPropertyName =
   keyof SunSpecPropertyTypes;
 
-/**
- * Resolves the returned value type for a logical property.
- */
 export type SunSpecPropertyValue<
   TProperty extends SunSpecPropertyName,
 > =

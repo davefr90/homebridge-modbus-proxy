@@ -4,8 +4,63 @@ import {
   it,
 } from 'vitest';
 
-import { SunSpecDevice } from '../../src/sunspec/devices/SunSpecDevice.js';
-import { SunSpecDeviceBuilder } from '../../src/sunspec/SunSpecDeviceBuilder.js';
+import type {
+  ManagedDevice,
+} from '../../src/device/ManagedDevice.js';
+
+import {
+  SunSpecDevice,
+} from '../../src/sunspec/devices/SunSpecDevice.js';
+
+import {
+  SunSpecDeviceInformation,
+} from '../../src/sunspec/devices/SunSpecDeviceInformation.js';
+
+import {
+  SunSpecDiscoveryResult,
+} from '../../src/sunspec/discovery/SunSpecDiscoveryResult.js';
+
+import {
+  SunSpecDeviceBuilder,
+} from '../../src/sunspec/SunSpecDeviceBuilder.js';
+
+import type {
+  SunSpecModelContainer,
+} from '../../src/sunspec/SunSpecModelContainer.js';
+
+/**
+ * Creates a SunSpec device for model-container tests.
+ *
+ * These tests do not perform register reads or writes.
+ * Therefore, a lightweight ManagedDevice placeholder is
+ * sufficient.
+ */
+function createDevice(
+  container: SunSpecModelContainer,
+): SunSpecDevice {
+
+  const discoveryResult =
+    new SunSpecDiscoveryResult(
+      1,
+      40000,
+      [],
+    );
+
+  const deviceInformation =
+    new SunSpecDeviceInformation(
+      discoveryResult,
+    );
+
+  const managedDevice =
+    {} as ManagedDevice;
+
+  return new SunSpecDevice(
+    deviceInformation,
+    container,
+    managedDevice,
+  );
+
+}
 
 describe(
   'SunSpecDevice',
@@ -24,7 +79,7 @@ describe(
             .build();
 
         const device =
-          new SunSpecDevice(
+          createDevice(
             container,
           );
 
@@ -49,7 +104,7 @@ describe(
             .build();
 
         const device =
-          new SunSpecDevice(
+          createDevice(
             container,
           );
 
@@ -67,7 +122,7 @@ describe(
       () => {
 
         const device =
-          new SunSpecDevice(
+          createDevice(
             SunSpecDeviceBuilder
               .create()
               .common()
@@ -107,7 +162,7 @@ describe(
       () => {
 
         const device =
-          new SunSpecDevice(
+          createDevice(
             SunSpecDeviceBuilder
               .create()
               .common()
@@ -131,7 +186,7 @@ describe(
       () => {
 
         const device =
-          new SunSpecDevice(
+          createDevice(
             SunSpecDeviceBuilder
               .create()
               .common()

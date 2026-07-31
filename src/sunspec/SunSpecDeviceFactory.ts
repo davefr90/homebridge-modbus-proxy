@@ -30,6 +30,10 @@ import {
   SunSpecDevice,
 } from './devices/SunSpecDevice.js';
 
+import {
+  SunSpecDeviceInformation,
+} from './devices/SunSpecDeviceInformation.js';
+
 import type {
   SunSpecDiscoveredModel,
 } from './discovery/SunSpecDiscoveredModel.js';
@@ -47,6 +51,10 @@ import {
 } from './models/InverterModel103.js';
 
 import {
+  MeterModel203,
+} from './models/MeterModel203.js';
+
+import {
   NameplateModel120,
 } from './models/NameplateModel120.js';
 
@@ -56,30 +64,18 @@ import {
 
 /**
  * Creates a complete SunSpec device from a discovery result.
- *
- * Only models supported by this library are added to the
- * resulting device. Unknown models remain available through
- * the discovery result but are ignored by the device factory.
  */
 export class SunSpecDeviceFactory {
 
-  /**
-   * Creates a complete SunSpec device.
-   *
-   * The resulting device contains:
-   *
-   * - supported SunSpec models
-   * - a namespaced composite register map
-   * - logical register reading
-   * - logical register writing
-   *
-   * @param discoveryResult Result returned by SunSpecDiscovery.
-   * @param modbusClient Connected Modbus TCP client.
-   */
   public static create(
     discoveryResult: SunSpecDiscoveryResult,
     modbusClient: ModbusClient,
   ): SunSpecDevice {
+
+    const deviceInformation =
+      new SunSpecDeviceInformation(
+        discoveryResult,
+      );
 
     const container =
       new SunSpecModelContainer();
@@ -131,17 +127,13 @@ export class SunSpecDeviceFactory {
       );
 
     return new SunSpecDevice(
+      deviceInformation,
       container,
       managedDevice,
     );
 
   }
 
-  /**
-   * Adds one supported discovered model to the device.
-   *
-   * Unsupported model identifiers are intentionally ignored.
-   */
   private static addModel(
     container: SunSpecModelContainer,
     registerMap: CompositeDeviceRegisterMap,
@@ -154,6 +146,19 @@ export class SunSpecDeviceFactory {
     ) {
 
       case CommonModel.MODEL_ID: {
+
+        /*
+         * SolarEdge exposes another Common Model directly
+         * before its embedded meter. The current public API
+         * represents the primary device Common Model only.
+         */
+        if (
+          container.has(
+            CommonModel.MODEL_ID,
+          )
+        ) {
+          return;
+        }
 
         SunSpecDeviceFactory
           .validateModelLength(
@@ -234,23 +239,40 @@ export class SunSpecDeviceFactory {
 
       }
 
-      default:
+      case MeterModel203.MODEL_ID: {
 
-        /*
-         * Unknown models remain part of the discovery result
-         * but are not represented by a SunSpecModel until a
-         * matching implementation exists.
-         */
+        SunSpecDeviceFactory
+          .validateModelLength(
+            discoveredModel,
+            MeterModel203.MODEL_LENGTH,
+          );
+
+        const model =
+          MeterModel203.create(
+            discoveryResult.unitId,
+            discoveredModel.headerAddress,
+          );
+
+        container.add(
+          model,
+        );
+
+        registerMap.addMap(
+          'meter',
+          model.registerMap,
+        );
+
+        return;
+
+      }
+
+      default:
         return;
 
     }
 
   }
 
-  /**
-   * Verifies that a discovered model has the length expected
-   * by its model implementation.
-   */
   private static validateModelLength(
     discoveredModel: SunSpecDiscoveredModel,
     expectedLength: number,

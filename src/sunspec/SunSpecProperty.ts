@@ -1,9 +1,5 @@
 /**
  * Well-known logical SunSpec property names.
- *
- * These constants provide IntelliSense and prevent property
- * names from being duplicated as string literals throughout
- * the public API.
  */
 export const SunSpecProperty = {
 
@@ -103,6 +99,106 @@ export const SunSpecProperty = {
 
     MaximumVoltage:
       'nameplate.maximumVoltage',
+
+  },
+
+  Meter: {
+
+    Current:
+      'meter.current',
+
+    CurrentA:
+      'meter.currentA',
+
+    CurrentB:
+      'meter.currentB',
+
+    CurrentC:
+      'meter.currentC',
+
+    VoltageLineNeutral:
+      'meter.voltageLineNeutral',
+
+    VoltageAN:
+      'meter.voltageAN',
+
+    VoltageBN:
+      'meter.voltageBN',
+
+    VoltageCN:
+      'meter.voltageCN',
+
+    VoltageLineLine:
+      'meter.voltageLineLine',
+
+    VoltageAB:
+      'meter.voltageAB',
+
+    VoltageBC:
+      'meter.voltageBC',
+
+    VoltageCA:
+      'meter.voltageCA',
+
+    Frequency:
+      'meter.frequency',
+
+    ActivePower:
+      'meter.activePower',
+
+    ActivePowerA:
+      'meter.activePowerA',
+
+    ActivePowerB:
+      'meter.activePowerB',
+
+    ActivePowerC:
+      'meter.activePowerC',
+
+    ApparentPower:
+      'meter.apparentPower',
+
+    ApparentPowerA:
+      'meter.apparentPowerA',
+
+    ApparentPowerB:
+      'meter.apparentPowerB',
+
+    ApparentPowerC:
+      'meter.apparentPowerC',
+
+    ReactivePower:
+      'meter.reactivePower',
+
+    ReactivePowerA:
+      'meter.reactivePowerA',
+
+    ReactivePowerB:
+      'meter.reactivePowerB',
+
+    ReactivePowerC:
+      'meter.reactivePowerC',
+
+    PowerFactor:
+      'meter.powerFactor',
+
+    PowerFactorA:
+      'meter.powerFactorA',
+
+    PowerFactorB:
+      'meter.powerFactorB',
+
+    PowerFactorC:
+      'meter.powerFactorC',
+
+    ExportedEnergy:
+      'meter.exportedEnergy',
+
+    ImportedEnergy:
+      'meter.importedEnergy',
+
+    Events:
+      'meter.events',
 
   },
 

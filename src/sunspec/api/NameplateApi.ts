@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import type {
+  NameplateSnapshot,
+} from '../models/snapshots/NameplateSnapshot.js';
+
 import {
   PropertyApi,
 } from './PropertyApi.js';
@@ -66,6 +70,30 @@ export class NameplateApi
     return this.read(
       SunSpecProperty.Nameplate.MaximumVoltage,
     );
+
+  }
+
+  /**
+   * Reads all currently exposed Nameplate Model properties.
+   */
+  public async snapshot():
+    Promise<NameplateSnapshot> {
+
+    const [
+      maximumPower,
+      maximumCurrent,
+      maximumVoltage,
+    ] = await Promise.all([
+      this.maximumPower(),
+      this.maximumCurrent(),
+      this.maximumVoltage(),
+    ]);
+
+    return {
+      maximumPower,
+      maximumCurrent,
+      maximumVoltage,
+    };
 
   }
 

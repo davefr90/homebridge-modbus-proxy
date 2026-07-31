@@ -6,9 +6,21 @@ import {
   SunSpecDevice,
 } from './devices/SunSpecDevice.js';
 
+import type {
+  SunSpecDeviceInformation,
+} from './devices/SunSpecDeviceInformation.js';
+
 import {
   SunSpecDiscovery,
 } from './discovery/SunSpecDiscovery.js';
+
+import type {
+  SunSpecDiscoveryResult,
+} from './discovery/SunSpecDiscoveryResult.js';
+
+import type {
+  SystemSnapshot,
+} from './models/snapshots/SystemSnapshot.js';
 
 import type {
   SunSpecClientOptions,
@@ -147,6 +159,42 @@ export class SunSpecClient {
       property,
       value,
     );
+
+  }
+
+  /**
+   * Reads a complete snapshot of the initialized
+   * SunSpec device.
+   */
+  public async snapshot():
+    Promise<SystemSnapshot> {
+
+    return this.sunSpecDevice
+      .snapshot();
+
+  }
+
+  /**
+   * Returns structural information about the discovered
+   * SunSpec device.
+   */
+  public information():
+    SunSpecDeviceInformation {
+
+    return this.sunSpecDevice
+      .information();
+
+  }
+
+  /**
+   * Returns the SunSpec discovery result created during
+   * client initialization.
+   */
+  public discovery():
+    SunSpecDiscoveryResult {
+
+    return this.sunSpecDevice
+      .discovery();
 
   }
 

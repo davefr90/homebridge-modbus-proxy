@@ -2,6 +2,10 @@ import {
   SunSpecProperty,
 } from '../SunSpecProperty.js';
 
+import type {
+  CommonSnapshot,
+} from '../models/snapshots/CommonSnapshot.js';
+
 import {
   PropertyApi,
 } from './PropertyApi.js';
@@ -103,6 +107,39 @@ export class CommonApi
     return this.read(
       SunSpecProperty.Common.DeviceAddress,
     );
+
+  }
+
+  /**
+   * Reads all currently exposed Common Model properties.
+   */
+  public async snapshot():
+    Promise<CommonSnapshot> {
+
+    const [
+      manufacturer,
+      model,
+      options,
+      version,
+      serialNumber,
+      deviceAddress,
+    ] = await Promise.all([
+      this.manufacturer(),
+      this.modelName(),
+      this.options(),
+      this.version(),
+      this.serialNumber(),
+      this.deviceAddress(),
+    ]);
+
+    return {
+      manufacturer,
+      model,
+      options,
+      version,
+      serialNumber,
+      deviceAddress,
+    };
 
   }
 

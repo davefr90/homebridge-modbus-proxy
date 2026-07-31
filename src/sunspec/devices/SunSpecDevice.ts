@@ -11,8 +11,28 @@ import {
 } from '../api/InverterApi.js';
 
 import {
+  MeterApi,
+} from '../api/MeterApi.js';
+
+import {
   NameplateApi,
 } from '../api/NameplateApi.js';
+
+import type {
+  SunSpecDiscoveryResult,
+} from '../discovery/SunSpecDiscoveryResult.js';
+
+import {
+  MeterModel203,
+} from '../models/MeterModel203.js';
+
+import {
+  NameplateModel120,
+} from '../models/NameplateModel120.js';
+
+import type {
+  SystemSnapshot,
+} from '../models/snapshots/SystemSnapshot.js';
 
 import {
   SunSpecModel,
@@ -27,47 +47,31 @@ import type {
   SunSpecPropertyValue,
 } from '../SunSpecPropertyTypes.js';
 
+import {
+  SunSpecDeviceInformation,
+} from './SunSpecDeviceInformation.js';
+
 /**
  * Represents a generic SunSpec device.
- *
- * A SunSpec device contains the supported SunSpec models
- * discovered on a Modbus device and provides logical
- * property-based read and write access.
  */
 export class SunSpecDevice {
 
-  /**
-   * Common Model API.
-   *
-   * SunSpec Model ID: 1
-   */
   public readonly common:
     CommonApi;
 
-  /**
-   * Inverter Model API.
-   *
-   * Currently backed by SunSpec Model ID 103.
-   */
   public readonly inverter:
     InverterApi;
 
-  /**
-   * Nameplate Model API.
-   *
-   * SunSpec Model ID: 120
-   */
   public readonly nameplate:
     NameplateApi;
 
-  /**
-   * Creates a new SunSpec device.
-   *
-   * @param container Collection of supported SunSpec models.
-   * @param logicalDevice Logical Modbus device used for
-   * reading and writing properties.
-   */
+  public readonly meter:
+    MeterApi | undefined;
+
   public constructor(
+
+    private readonly deviceInformation:
+      SunSpecDeviceInformation,
 
     private readonly container:
       SunSpecModelContainer,
@@ -92,13 +96,17 @@ export class SunSpecDevice {
         this,
       );
 
+    this.meter =
+      this.deviceInformation.hasModel(
+        MeterModel203.MODEL_ID,
+      )
+        ? new MeterApi(
+            this,
+          )
+        : undefined;
+
   }
 
-  /**
-   * Reads a typed logical SunSpec device property.
-   *
-   * The return type is inferred from the supplied property.
-   */
   public async read<
     TProperty extends SunSpecPropertyName,
   >(
@@ -117,13 +125,6 @@ export class SunSpecDevice {
 
   }
 
-  /**
-   * Writes a logical SunSpec device property.
-   *
-   * Writable property typing will be introduced separately,
-   * so read-only properties cannot accidentally be exposed
-   * as writable.
-   */
   public async write(
     property: string,
     value: boolean | number | string,
@@ -136,9 +137,77 @@ export class SunSpecDevice {
 
   }
 
-  /**
-   * Returns all supported SunSpec models.
-   */
+  public async snapshot():
+    Promise<SystemSnapshot> {
+
+    const commonPromise =
+      this.common.snapshot();
+
+    const inverterPromise =
+      this.inverter.snapshot();
+
+    const nameplatePromise =
+      this.deviceInformation.hasModel(
+        NameplateModel120.MODEL_ID,
+      )
+        ? this.nameplate.snapshot()
+        : Promise.resolve(
+            undefined,
+          );
+
+    const meterPromise =
+      this.meter === undefined
+        ? Promise.resolve(
+            undefined,
+          )
+        : this.meter.snapshot();
+
+    const [
+      common,
+      inverter,
+      nameplate,
+      meter,
+    ] = await Promise.all([
+      commonPromise,
+      inverterPromise,
+      nameplatePromise,
+      meterPromise,
+    ]);
+
+    return {
+      common,
+      inverter,
+
+      ...(nameplate === undefined
+        ? {}
+        : {
+            nameplate,
+          }),
+
+      ...(meter === undefined
+        ? {}
+        : {
+            meter,
+          }),
+    };
+
+  }
+
+  public information():
+    SunSpecDeviceInformation {
+
+    return this.deviceInformation;
+
+  }
+
+  public discovery():
+    SunSpecDiscoveryResult {
+
+    return this.deviceInformation
+      .discovery();
+
+  }
+
   public models():
     readonly SunSpecModel[] {
 
@@ -146,20 +215,13 @@ export class SunSpecDevice {
 
   }
 
-  /**
-   * Returns the number of supported SunSpec models.
-   */
-  public size(): number {
+  public size():
+    number {
 
     return this.container.size();
 
   }
 
-  /**
-   * Returns whether a supported SunSpec model exists.
-   *
-   * @param modelId SunSpec model identifier.
-   */
   public hasModel(
     modelId: number,
   ): boolean {
@@ -170,11 +232,6 @@ export class SunSpecDevice {
 
   }
 
-  /**
-   * Returns a supported SunSpec model.
-   *
-   * @param modelId SunSpec model identifier.
-   */
   public model(
     modelId: number,
   ): SunSpecModel {
@@ -185,11 +242,6 @@ export class SunSpecDevice {
 
   }
 
-  /**
-   * Returns the internal logical Modbus device.
-   *
-   * Intended for advanced use cases.
-   */
   public managedDevice():
     ManagedDevice {
 
