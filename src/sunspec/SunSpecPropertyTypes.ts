@@ -81,7 +81,7 @@ export interface SunSpecPropertyTypes {
     number;
 
   [SunSpecProperty.Inverter.Temperature]:
-    number;
+    number | undefined;
 
   [SunSpecProperty.Inverter.Status]:
     number;

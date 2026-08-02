@@ -15,6 +15,33 @@ import type {
 } from './SunSpecPropertyReader.js';
 
 /**
+ * Inverter properties included in one coherent optimized
+ * multi-property snapshot read.
+ */
+const INVERTER_SNAPSHOT_PROPERTIES = [
+  SunSpecProperty.Inverter.AcCurrent,
+  SunSpecProperty.Inverter.AcCurrentA,
+  SunSpecProperty.Inverter.AcCurrentB,
+  SunSpecProperty.Inverter.AcCurrentC,
+  SunSpecProperty.Inverter.AcVoltageAB,
+  SunSpecProperty.Inverter.AcVoltageBC,
+  SunSpecProperty.Inverter.AcVoltageCA,
+  SunSpecProperty.Inverter.AcVoltageAN,
+  SunSpecProperty.Inverter.AcVoltageBN,
+  SunSpecProperty.Inverter.AcVoltageCN,
+  SunSpecProperty.Inverter.AcPower,
+  SunSpecProperty.Inverter.Frequency,
+  SunSpecProperty.Inverter.ApparentPower,
+  SunSpecProperty.Inverter.ReactivePower,
+  SunSpecProperty.Inverter.PowerFactor,
+  SunSpecProperty.Inverter.DcCurrent,
+  SunSpecProperty.Inverter.DcVoltage,
+  SunSpecProperty.Inverter.DcPower,
+  SunSpecProperty.Inverter.Temperature,
+  SunSpecProperty.Inverter.Status,
+] as const;
+
+/**
  * Provides convenient access to SunSpec inverter properties.
  *
  * Currently backed by SunSpec Inverter Model 103.
@@ -257,7 +284,7 @@ export class InverterApi
    * Reads inverter temperature.
    */
   public async temperature():
-    Promise<number> {
+    Promise<number | undefined> {
 
     return this.read(
       SunSpecProperty.Inverter.Temperature,
@@ -278,76 +305,77 @@ export class InverterApi
   }
 
   /**
-   * Reads all currently exposed inverter properties.
+   * Reads all currently exposed inverter properties from one
+   * coherent optimized Modbus block snapshot.
    */
   public async snapshot():
     Promise<InverterSnapshot> {
 
-    const [
-      acCurrent,
-      acCurrentA,
-      acCurrentB,
-      acCurrentC,
-      acVoltageAB,
-      acVoltageBC,
-      acVoltageCA,
-      acVoltageAN,
-      acVoltageBN,
-      acVoltageCN,
-      acPower,
-      frequency,
-      apparentPower,
-      reactivePower,
-      powerFactor,
-      dcCurrent,
-      dcVoltage,
-      dcPower,
-      temperature,
-      status,
-    ] = await Promise.all([
-      this.acCurrent(),
-      this.acCurrentA(),
-      this.acCurrentB(),
-      this.acCurrentC(),
-      this.acVoltageAB(),
-      this.acVoltageBC(),
-      this.acVoltageCA(),
-      this.acVoltageAN(),
-      this.acVoltageBN(),
-      this.acVoltageCN(),
-      this.acPower(),
-      this.frequency(),
-      this.apparentPower(),
-      this.reactivePower(),
-      this.powerFactor(),
-      this.dcCurrent(),
-      this.dcVoltage(),
-      this.dcPower(),
-      this.temperature(),
-      this.status(),
-    ]);
+    const values =
+      await this.readMany(
+        INVERTER_SNAPSHOT_PROPERTIES,
+      );
 
     return {
-      acCurrent,
-      acCurrentA,
-      acCurrentB,
-      acCurrentC,
-      acVoltageAB,
-      acVoltageBC,
-      acVoltageCA,
-      acVoltageAN,
-      acVoltageBN,
-      acVoltageCN,
-      acPower,
-      frequency,
-      apparentPower,
-      reactivePower,
-      powerFactor,
-      dcCurrent,
-      dcVoltage,
-      dcPower,
-      temperature,
-      status,
+      acCurrent:
+        values[SunSpecProperty.Inverter.AcCurrent],
+
+      acCurrentA:
+        values[SunSpecProperty.Inverter.AcCurrentA],
+
+      acCurrentB:
+        values[SunSpecProperty.Inverter.AcCurrentB],
+
+      acCurrentC:
+        values[SunSpecProperty.Inverter.AcCurrentC],
+
+      acVoltageAB:
+        values[SunSpecProperty.Inverter.AcVoltageAB],
+
+      acVoltageBC:
+        values[SunSpecProperty.Inverter.AcVoltageBC],
+
+      acVoltageCA:
+        values[SunSpecProperty.Inverter.AcVoltageCA],
+
+      acVoltageAN:
+        values[SunSpecProperty.Inverter.AcVoltageAN],
+
+      acVoltageBN:
+        values[SunSpecProperty.Inverter.AcVoltageBN],
+
+      acVoltageCN:
+        values[SunSpecProperty.Inverter.AcVoltageCN],
+
+      acPower:
+        values[SunSpecProperty.Inverter.AcPower],
+
+      frequency:
+        values[SunSpecProperty.Inverter.Frequency],
+
+      apparentPower:
+        values[SunSpecProperty.Inverter.ApparentPower],
+
+      reactivePower:
+        values[SunSpecProperty.Inverter.ReactivePower],
+
+      powerFactor:
+        values[SunSpecProperty.Inverter.PowerFactor],
+
+      dcCurrent:
+        values[SunSpecProperty.Inverter.DcCurrent],
+
+      dcVoltage:
+        values[SunSpecProperty.Inverter.DcVoltage],
+
+      dcPower:
+        values[SunSpecProperty.Inverter.DcPower],
+
+      temperature:
+        values[SunSpecProperty.Inverter.Temperature],
+
+      status:
+        values[SunSpecProperty.Inverter.Status],
     };
 
   }

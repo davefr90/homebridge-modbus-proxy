@@ -13,168 +13,98 @@ import type {
   SunSpecPropertyReader,
 } from '../../../src/sunspec/api/SunSpecPropertyReader.js';
 
+import {
+  SunSpecProperty,
+} from '../../../src/sunspec/SunSpecProperty.js';
+
 describe(
   'InverterApi',
   () => {
 
     it(
-      'returns a snapshot containing all exposed inverter properties',
+      'returns all properties from one optimized snapshot read',
       async () => {
 
-        const reader = {
-          read: vi.fn(),
-          write: vi.fn(),
-        } as unknown as SunSpecPropertyReader;
+        const read =
+          vi.fn();
 
-        const api = new InverterApi(
-          reader,
-        );
+        const readMany =
+          vi.fn()
+            .mockResolvedValue({
+              [SunSpecProperty.Inverter.AcCurrent]:
+                12.3,
 
-        vi.spyOn(
-          api,
-          'acCurrent',
-        ).mockResolvedValue(
-          12.3,
-        );
+              [SunSpecProperty.Inverter.AcCurrentA]:
+                4.1,
 
-        vi.spyOn(
-          api,
-          'acCurrentA',
-        ).mockResolvedValue(
-          4.1,
-        );
+              [SunSpecProperty.Inverter.AcCurrentB]:
+                4.2,
 
-        vi.spyOn(
-          api,
-          'acCurrentB',
-        ).mockResolvedValue(
-          4.2,
-        );
+              [SunSpecProperty.Inverter.AcCurrentC]:
+                4.0,
 
-        vi.spyOn(
-          api,
-          'acCurrentC',
-        ).mockResolvedValue(
-          4.0,
-        );
+              [SunSpecProperty.Inverter.AcVoltageAB]:
+                400.1,
 
-        vi.spyOn(
-          api,
-          'acVoltageAB',
-        ).mockResolvedValue(
-          400.1,
-        );
+              [SunSpecProperty.Inverter.AcVoltageBC]:
+                399.8,
 
-        vi.spyOn(
-          api,
-          'acVoltageBC',
-        ).mockResolvedValue(
-          399.8,
-        );
+              [SunSpecProperty.Inverter.AcVoltageCA]:
+                400.3,
 
-        vi.spyOn(
-          api,
-          'acVoltageCA',
-        ).mockResolvedValue(
-          400.3,
-        );
+              [SunSpecProperty.Inverter.AcVoltageAN]:
+                230.4,
 
-        vi.spyOn(
-          api,
-          'acVoltageAN',
-        ).mockResolvedValue(
-          230.4,
-        );
+              [SunSpecProperty.Inverter.AcVoltageBN]:
+                230.1,
 
-        vi.spyOn(
-          api,
-          'acVoltageBN',
-        ).mockResolvedValue(
-          230.1,
-        );
+              [SunSpecProperty.Inverter.AcVoltageCN]:
+                230.5,
 
-        vi.spyOn(
-          api,
-          'acVoltageCN',
-        ).mockResolvedValue(
-          230.5,
-        );
+              [SunSpecProperty.Inverter.AcPower]:
+                7250,
 
-        vi.spyOn(
-          api,
-          'acPower',
-        ).mockResolvedValue(
-          7250,
-        );
+              [SunSpecProperty.Inverter.Frequency]:
+                50.01,
 
-        vi.spyOn(
-          api,
-          'frequency',
-        ).mockResolvedValue(
-          50.01,
-        );
+              [SunSpecProperty.Inverter.ApparentPower]:
+                7310,
 
-        vi.spyOn(
-          api,
-          'apparentPower',
-        ).mockResolvedValue(
-          7310,
-        );
+              [SunSpecProperty.Inverter.ReactivePower]:
+                320,
 
-        vi.spyOn(
-          api,
-          'reactivePower',
-        ).mockResolvedValue(
-          320,
-        );
+              [SunSpecProperty.Inverter.PowerFactor]:
+                99.2,
 
-        vi.spyOn(
-          api,
-          'powerFactor',
-        ).mockResolvedValue(
-          99.2,
-        );
+              [SunSpecProperty.Inverter.DcCurrent]:
+                11.8,
 
-        vi.spyOn(
-          api,
-          'dcCurrent',
-        ).mockResolvedValue(
-          11.8,
-        );
+              [SunSpecProperty.Inverter.DcVoltage]:
+                680.5,
 
-        vi.spyOn(
-          api,
-          'dcVoltage',
-        ).mockResolvedValue(
-          680.5,
-        );
+              [SunSpecProperty.Inverter.DcPower]:
+                8030,
 
-        vi.spyOn(
-          api,
-          'dcPower',
-        ).mockResolvedValue(
-          8030,
-        );
+              [SunSpecProperty.Inverter.Temperature]:
+                42.7,
 
-        vi.spyOn(
-          api,
-          'temperature',
-        ).mockResolvedValue(
-          42.7,
-        );
+              [SunSpecProperty.Inverter.Status]:
+                4,
+            });
 
-        vi.spyOn(
-          api,
-          'status',
-        ).mockResolvedValue(
-          4,
-        );
+        const api =
+          new InverterApi(
+            {
+              read,
+              readMany,
+              write:
+                vi.fn(),
+            } as unknown as SunSpecPropertyReader,
+          );
 
-        const snapshot = await api.snapshot();
-
-        expect(
-          snapshot,
-        ).toEqual({
+        await expect(
+          api.snapshot(),
+        ).resolves.toEqual({
           acCurrent: 12.3,
           acCurrentA: 4.1,
           acCurrentB: 4.2,
@@ -196,6 +126,41 @@ describe(
           temperature: 42.7,
           status: 4,
         });
+
+        expect(
+          read,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          readMany,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          readMany,
+        ).toHaveBeenCalledWith([
+          SunSpecProperty.Inverter.AcCurrent,
+          SunSpecProperty.Inverter.AcCurrentA,
+          SunSpecProperty.Inverter.AcCurrentB,
+          SunSpecProperty.Inverter.AcCurrentC,
+          SunSpecProperty.Inverter.AcVoltageAB,
+          SunSpecProperty.Inverter.AcVoltageBC,
+          SunSpecProperty.Inverter.AcVoltageCA,
+          SunSpecProperty.Inverter.AcVoltageAN,
+          SunSpecProperty.Inverter.AcVoltageBN,
+          SunSpecProperty.Inverter.AcVoltageCN,
+          SunSpecProperty.Inverter.AcPower,
+          SunSpecProperty.Inverter.Frequency,
+          SunSpecProperty.Inverter.ApparentPower,
+          SunSpecProperty.Inverter.ReactivePower,
+          SunSpecProperty.Inverter.PowerFactor,
+          SunSpecProperty.Inverter.DcCurrent,
+          SunSpecProperty.Inverter.DcVoltage,
+          SunSpecProperty.Inverter.DcPower,
+          SunSpecProperty.Inverter.Temperature,
+          SunSpecProperty.Inverter.Status,
+        ]);
 
       },
     );

@@ -1,35 +1,93 @@
 /**
- * Register offsets within the data section of
- * SunSpec three-phase inverter model 103.
- *
- * The offsets are relative to the first data register,
- * immediately after model ID and model length.
+ * Register offsets within the data section of SunSpec
+ * three-phase inverter model 103.
  */
 export enum InverterModel103Register {
 
-  /**
-   * Total AC current.
-   */
   AC_CURRENT = 0,
 
-  /**
-   * Phase A AC current.
-   */
   AC_CURRENT_PHASE_A = 1,
 
-  /**
-   * Phase B AC current.
-   */
   AC_CURRENT_PHASE_B = 2,
 
-  /**
-   * Phase C AC current.
-   */
   AC_CURRENT_PHASE_C = 3,
 
-  /**
-   * Base-10 scale factor for all AC current values.
-   */
   AC_CURRENT_SCALE_FACTOR = 4,
+
+  AC_VOLTAGE_AB = 5,
+
+  AC_VOLTAGE_BC = 6,
+
+  AC_VOLTAGE_CA = 7,
+
+  AC_VOLTAGE_AN = 8,
+
+  AC_VOLTAGE_BN = 9,
+
+  AC_VOLTAGE_CN = 10,
+
+  AC_VOLTAGE_SCALE_FACTOR = 11,
+
+  AC_POWER = 12,
+
+  AC_POWER_SCALE_FACTOR = 13,
+
+  FREQUENCY = 14,
+
+  FREQUENCY_SCALE_FACTOR = 15,
+
+  APPARENT_POWER = 16,
+
+  APPARENT_POWER_SCALE_FACTOR = 17,
+
+  REACTIVE_POWER = 18,
+
+  REACTIVE_POWER_SCALE_FACTOR = 19,
+
+  POWER_FACTOR = 20,
+
+  POWER_FACTOR_SCALE_FACTOR = 21,
+
+  AC_LIFETIME_ENERGY = 22,
+
+  AC_LIFETIME_ENERGY_SCALE_FACTOR = 24,
+
+  DC_CURRENT = 25,
+
+  DC_CURRENT_SCALE_FACTOR = 26,
+
+  DC_VOLTAGE = 27,
+
+  DC_VOLTAGE_SCALE_FACTOR = 28,
+
+  DC_POWER = 29,
+
+  DC_POWER_SCALE_FACTOR = 30,
+
+  CABINET_TEMPERATURE = 31,
+
+  HEAT_SINK_TEMPERATURE = 32,
+
+  TRANSFORMER_TEMPERATURE = 33,
+
+  OTHER_TEMPERATURE = 34,
+
+  TEMPERATURE_SCALE_FACTOR = 35,
+
+  STATUS = 36,
+
+  VENDOR_STATUS = 37,
+
+  EVENT_1 = 38,
+
+  EVENT_2 = 40,
+
+  VENDOR_EVENT_1 = 42,
+
+  VENDOR_EVENT_2 = 44,
+
+  VENDOR_EVENT_3 = 46,
+
+  VENDOR_EVENT_4 = 48,
 
 }

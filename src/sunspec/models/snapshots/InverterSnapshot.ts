@@ -39,7 +39,7 @@ export interface InverterSnapshot {
 
   readonly dcPower: number;
 
-  readonly temperature: number;
+  readonly temperature: number | undefined;
 
   /**
    * Raw SunSpec inverter status.
