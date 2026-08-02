@@ -191,6 +191,21 @@ export interface SunSpecPropertyTypes {
   [SunSpecProperty.Meter.Events]:
     number;
 
+  [SunSpecProperty.Storage.EnergyRating]:
+    number | undefined;
+
+  [SunSpecProperty.Storage.EnergyAvailable]:
+    number | undefined;
+
+  [SunSpecProperty.Storage.StateOfCharge]:
+    number | undefined;
+
+  [SunSpecProperty.Storage.StateOfHealth]:
+    number | undefined;
+
+  [SunSpecProperty.Storage.Status]:
+    number | undefined;
+
 }
 
 export type SunSpecPropertyName =

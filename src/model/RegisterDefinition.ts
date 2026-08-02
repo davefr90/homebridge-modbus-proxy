@@ -63,6 +63,14 @@ export interface RegisterDefinition {
   scaleProperty?: string;
 
   /**
+   * Decoded register value indicating that the SunSpec point
+   * is not implemented.
+   *
+   * The value is checked before dynamic scaling is applied.
+   */
+  notImplementedValue?: number;
+
+  /**
    * Whether the register can be written.
    */
   writable?: boolean;

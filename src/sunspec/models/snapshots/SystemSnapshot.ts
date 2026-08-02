@@ -14,6 +14,10 @@ import type {
   NameplateSnapshot,
 } from './NameplateSnapshot.js';
 
+import type {
+  StorageSnapshot,
+} from './StorageSnapshot.js';
+
 /**
  * Immutable snapshot of all currently exposed
  * SunSpec device areas.
@@ -39,5 +43,12 @@ export interface SystemSnapshot {
    */
   readonly meter?:
     MeterSnapshot;
+
+  /**
+   * Storage data is present when SunSpec Model 713 was
+   * discovered.
+   */
+  readonly storage?:
+    StorageSnapshot;
 
 }

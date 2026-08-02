@@ -186,6 +186,18 @@ export class SunSpecRegisterBuilder {
 
   }
 
+  public notImplementedValue(
+    value: number,
+  ): this {
+
+    this.builder.notImplementedValue(
+      value,
+    );
+
+    return this;
+
+  }
+
   public build(): RegisterDefinition {
 
     return this.builder.build();

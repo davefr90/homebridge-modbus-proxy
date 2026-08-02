@@ -19,6 +19,13 @@ import {
 } from './DeviceRegisterMap.js';
 
 /**
+ * Value returned for a logical device property.
+ */
+export type DeviceValue =
+  RegisterValue |
+  undefined;
+
+/**
  * Reads logical device properties.
  */
 export class DeviceReader {
@@ -40,7 +47,7 @@ export class DeviceReader {
    */
   public async read(
     property: string,
-  ): Promise<RegisterValue> {
+  ): Promise<DeviceValue> {
 
     const definition =
       this.registerMap.get(
@@ -48,9 +55,16 @@ export class DeviceReader {
       );
 
     const value =
-      await this.registerReader.read(
+      this.normalizeValue(
         definition,
+        await this.registerReader.read(
+          definition,
+        ),
       );
+
+    if (value === undefined) {
+      return undefined;
+    }
 
     if (
       definition.scaleProperty === undefined
@@ -78,9 +92,16 @@ export class DeviceReader {
       );
 
     const scaleFactor =
-      await this.registerReader.read(
+      this.normalizeValue(
         scaleDefinition,
+        await this.registerReader.read(
+          scaleDefinition,
+        ),
       );
+
+    if (scaleFactor === undefined) {
+      return undefined;
+    }
 
     if (typeof scaleFactor !== 'number') {
       throw new Error(
@@ -108,7 +129,7 @@ export class DeviceReader {
     Readonly<
       Record<
         string,
-        RegisterValue
+        DeviceValue
       >
     >
   > {
@@ -202,7 +223,7 @@ export class DeviceReader {
     const values:
       Record<
         string,
-        RegisterValue
+        DeviceValue
       > = {};
 
     for (
@@ -214,10 +235,20 @@ export class DeviceReader {
     ) {
 
       const value =
-        this.groupValue(
-          rawValues,
+        this.normalizeValue(
           definition,
+          this.groupValue(
+            rawValues,
+            definition,
+          ),
         );
+
+      if (value === undefined) {
+        values[property] =
+          undefined;
+
+        continue;
+      }
 
       if (
         definition.scaleProperty === undefined
@@ -240,10 +271,20 @@ export class DeviceReader {
         );
 
       const scaleFactor =
-        this.groupValue(
-          rawValues,
+        this.normalizeValue(
           scaleDefinition,
+          this.groupValue(
+            rawValues,
+            scaleDefinition,
+          ),
         );
+
+      if (scaleFactor === undefined) {
+        values[property] =
+          undefined;
+
+        continue;
+      }
 
       if (typeof scaleFactor !== 'number') {
         throw new Error(
@@ -264,6 +305,26 @@ export class DeviceReader {
   }
 
   /**
+   * Converts a configured not-implemented value into an
+   * unavailable logical device value.
+   */
+  private normalizeValue(
+    definition: RegisterDefinition,
+    value: RegisterValue,
+  ): DeviceValue {
+
+    if (
+      definition.notImplementedValue !== undefined
+      && value === definition.notImplementedValue
+    ) {
+      return undefined;
+    }
+
+    return value;
+
+  }
+
+  /**
    * Returns a decoded value from a group result.
    */
   private groupValue(
@@ -273,6 +334,17 @@ export class DeviceReader {
     >,
     definition: RegisterDefinition,
   ): RegisterValue {
+
+    if (
+      !values.has(
+        definition,
+      )
+    ) {
+      throw new Error(
+        'No grouped value returned for register: '
+        + definition.name,
+      );
+    }
 
     const value =
       values.get(

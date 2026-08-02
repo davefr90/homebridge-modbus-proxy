@@ -26,6 +26,8 @@ export class RegisterDefinitionBuilder {
 
   private registerScaleProperty: string | undefined;
 
+  private registerNotImplementedValue: number | undefined;
+
   private registerWritable: boolean | undefined;
 
   private registerName: string | undefined;
@@ -212,6 +214,21 @@ export class RegisterDefinitionBuilder {
   }
 
   /**
+   * Sets the decoded value that represents a SunSpec
+   * not-implemented point.
+   */
+  public notImplementedValue(
+    value: number,
+  ): this {
+
+    this.registerNotImplementedValue =
+      value;
+
+    return this;
+
+  }
+
+  /**
    * Marks the register as writable or read-only.
    */
   public writable(
@@ -377,6 +394,18 @@ export class RegisterDefinitionBuilder {
       );
     }
 
+    if (
+      this.registerNotImplementedValue !== undefined
+      && !Number.isFinite(
+        this.registerNotImplementedValue,
+      )
+    ) {
+      throw new Error(
+        'Invalid not-implemented value: '
+        + this.registerNotImplementedValue,
+      );
+    }
+
     return {
 
       unitId:
@@ -420,6 +449,13 @@ export class RegisterDefinitionBuilder {
         : {
           scaleProperty:
               this.registerScaleProperty,
+        }),
+
+      ...(this.registerNotImplementedValue === undefined
+        ? {}
+        : {
+          notImplementedValue:
+              this.registerNotImplementedValue,
         }),
 
       ...(this.registerWritable === undefined

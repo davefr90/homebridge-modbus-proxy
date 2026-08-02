@@ -18,6 +18,10 @@ import {
   NameplateApi,
 } from '../api/NameplateApi.js';
 
+import {
+  StorageApi,
+} from '../api/StorageApi.js';
+
 import type {
   SunSpecPropertyValues,
 } from '../api/SunSpecPropertyReader.js';
@@ -33,6 +37,10 @@ import {
 import {
   NameplateModel120,
 } from '../models/NameplateModel120.js';
+
+import {
+  StorageModel713,
+} from '../models/StorageModel713.js';
 
 import type {
   SystemSnapshot,
@@ -72,6 +80,9 @@ export class SunSpecDevice {
   public readonly meter:
     MeterApi | undefined;
 
+  public readonly storage:
+    StorageApi | undefined;
+
   public constructor(
 
     private readonly deviceInformation:
@@ -105,6 +116,15 @@ export class SunSpecDevice {
         MeterModel203.MODEL_ID,
       )
         ? new MeterApi(
+          this,
+        )
+        : undefined;
+
+    this.storage =
+      this.deviceInformation.hasModel(
+        StorageModel713.MODEL_ID,
+      )
+        ? new StorageApi(
           this,
         )
         : undefined;
@@ -188,16 +208,25 @@ export class SunSpecDevice {
         )
         : this.meter.snapshot();
 
+    const storagePromise =
+      this.storage === undefined
+        ? Promise.resolve(
+          undefined,
+        )
+        : this.storage.snapshot();
+
     const [
       common,
       inverter,
       nameplate,
       meter,
+      storage,
     ] = await Promise.all([
       commonPromise,
       inverterPromise,
       nameplatePromise,
       meterPromise,
+      storagePromise,
     ]);
 
     return {
@@ -214,6 +243,12 @@ export class SunSpecDevice {
         ? {}
         : {
           meter,
+        }),
+
+      ...(storage === undefined
+        ? {}
+        : {
+          storage,
         }),
     };
 

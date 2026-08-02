@@ -1,6 +1,6 @@
 import type {
-  RegisterValue,
-} from '../model/RegisterReader.js';
+  DeviceValue,
+} from './DeviceReader.js';
 
 import {
   DeviceReader,
@@ -25,7 +25,7 @@ export class ManagedDevice {
    */
   public async read(
     property: string,
-  ): Promise<RegisterValue> {
+  ): Promise<DeviceValue> {
 
     return this.reader.read(
       property,
@@ -43,7 +43,7 @@ export class ManagedDevice {
     Readonly<
       Record<
         string,
-        RegisterValue
+        DeviceValue
       >
     >
   > {

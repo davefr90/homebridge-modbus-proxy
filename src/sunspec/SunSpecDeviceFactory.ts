@@ -59,6 +59,10 @@ import {
 } from './models/NameplateModel120.js';
 
 import {
+  StorageModel713,
+} from './models/StorageModel713.js';
+
+import {
   SunSpecModelContainer,
 } from './SunSpecModelContainer.js';
 
@@ -260,6 +264,33 @@ export class SunSpecDeviceFactory {
 
       registerMap.addMap(
         'meter',
+        model.registerMap,
+      );
+
+      return;
+
+    }
+
+    case StorageModel713.MODEL_ID: {
+
+      SunSpecDeviceFactory
+        .validateModelLength(
+          discoveredModel,
+          StorageModel713.MODEL_LENGTH,
+        );
+
+      const model =
+          StorageModel713.create(
+            discoveryResult.unitId,
+            discoveredModel.headerAddress,
+          );
+
+      container.add(
+        model,
+      );
+
+      registerMap.addMap(
+        'storage',
         model.registerMap,
       );
 

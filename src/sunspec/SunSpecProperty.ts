@@ -202,4 +202,23 @@ export const SunSpecProperty = {
 
   },
 
+  Storage: {
+
+    EnergyRating:
+      'storage.energyRating',
+
+    EnergyAvailable:
+      'storage.energyAvailable',
+
+    StateOfCharge:
+      'storage.stateOfCharge',
+
+    StateOfHealth:
+      'storage.stateOfHealth',
+
+    Status:
+      'storage.status',
+
+  },
+
 } as const;
