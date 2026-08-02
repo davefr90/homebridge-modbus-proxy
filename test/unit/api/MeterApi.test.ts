@@ -13,6 +13,10 @@ import type {
   SunSpecPropertyReader,
 } from '../../../src/sunspec/api/SunSpecPropertyReader.js';
 
+import {
+  SunSpecProperty,
+} from '../../../src/sunspec/SunSpecProperty.js';
+
 /**
  * Creates a Meter API with a reader returning zero
  * for every unmocked property.
@@ -26,6 +30,21 @@ function createMeterApi():
         .mockResolvedValue(
           0,
         ),
+
+    readMany:
+      vi.fn(
+        async (
+          properties: readonly string[],
+        ) =>
+          Object.fromEntries(
+            properties.map(
+              (property) => [
+                property,
+                0,
+              ],
+            ),
+          ),
+      ),
 
     write:
       vi.fn(),
@@ -150,18 +169,41 @@ describe(
     );
 
     it(
-      'returns a snapshot containing all exposed meter properties',
+      'returns a snapshot from one multi-property read',
       async () => {
 
-        const api =
-          createMeterApi();
+        const read =
+          vi.fn()
+            .mockResolvedValue(
+              0,
+            );
 
-        const activePower =
-          vi.spyOn(
-            api,
-            'activePower',
-          ).mockResolvedValue(
-            -2350.6,
+        const readMany =
+          vi.fn(
+            async (
+              properties: readonly string[],
+            ) =>
+              Object.fromEntries(
+                properties.map(
+                  (property) => [
+                    property,
+
+                    property ===
+                      SunSpecProperty.Meter.ActivePower
+                      ? -2350.6
+                      : 0,
+                  ],
+                ),
+              ),
+          );
+
+        const api =
+          new MeterApi(
+            {
+              read,
+              readMany,
+              write: vi.fn(),
+            } as unknown as SunSpecPropertyReader,
           );
 
         const snapshot =
@@ -206,14 +248,31 @@ describe(
           events: 0,
         });
 
-        /*
-         * The snapshot derives import and export power from
-         * one signed active-power read.
-         */
         expect(
-          activePower,
+          read,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          readMany,
         ).toHaveBeenCalledTimes(
           1,
+        );
+
+        const requestedProperties =
+          readMany.mock.calls[0]?.[0];
+
+        expect(
+          requestedProperties,
+        ).toHaveLength(
+          32,
+        );
+
+        expect(
+          new Set(
+            requestedProperties,
+          ).size,
+        ).toBe(
+          32,
         );
 
       },

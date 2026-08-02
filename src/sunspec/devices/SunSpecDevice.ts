@@ -19,6 +19,10 @@ import {
 } from '../api/NameplateApi.js';
 
 import type {
+  SunSpecPropertyValues,
+} from '../api/SunSpecPropertyReader.js';
+
+import type {
   SunSpecDiscoveryResult,
 } from '../discovery/SunSpecDiscoveryResult.js';
 
@@ -122,6 +126,28 @@ export class SunSpecDevice {
 
     return value as
       SunSpecPropertyValue<TProperty>;
+
+  }
+
+  /**
+   * Reads multiple typed SunSpec properties using optimized
+   * contiguous Modbus block requests.
+   */
+  public async readMany<
+    TProperties extends readonly SunSpecPropertyName[],
+  >(
+    properties: TProperties,
+  ): Promise<
+    SunSpecPropertyValues<TProperties>
+  > {
+
+    const values =
+      await this.logicalDevice.readMany(
+        properties,
+      );
+
+    return values as
+      SunSpecPropertyValues<TProperties>;
 
   }
 

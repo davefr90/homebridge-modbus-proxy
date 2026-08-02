@@ -1,5 +1,14 @@
-import { DeviceReader } from './DeviceReader.js';
-import { DeviceWriter } from './DeviceWriter.js';
+import type {
+  RegisterValue,
+} from '../model/RegisterReader.js';
+
+import {
+  DeviceReader,
+} from './DeviceReader.js';
+
+import {
+  DeviceWriter,
+} from './DeviceWriter.js';
 
 /**
  * Represents a logical Modbus device.
@@ -16,10 +25,31 @@ export class ManagedDevice {
    */
   public async read(
     property: string,
-  ): Promise<boolean | number | string> {
+  ): Promise<RegisterValue> {
 
     return this.reader.read(
       property,
+    );
+
+  }
+
+  /**
+   * Reads multiple logical device properties using
+   * optimized contiguous Modbus block requests.
+   */
+  public async readMany(
+    properties: readonly string[],
+  ): Promise<
+    Readonly<
+      Record<
+        string,
+        RegisterValue
+      >
+    >
+  > {
+
+    return this.reader.readMany(
+      properties,
     );
 
   }

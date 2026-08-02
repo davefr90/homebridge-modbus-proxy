@@ -4,6 +4,21 @@ import type {
 } from '../SunSpecPropertyTypes.js';
 
 /**
+ * Typed values returned for a collection of SunSpec
+ * properties.
+ */
+export type SunSpecPropertyValues<
+  TProperties extends readonly SunSpecPropertyName[],
+> = {
+
+  readonly [
+    TProperty in TProperties[number]
+  ]:
+    SunSpecPropertyValue<TProperty>;
+
+};
+
+/**
  * Provides access to logical SunSpec properties.
  *
  * Model-specific API classes depend on this interface instead
@@ -22,6 +37,18 @@ export interface SunSpecPropertyReader {
     property: TProperty,
   ): Promise<
     SunSpecPropertyValue<TProperty>
+  >;
+
+  /**
+   * Reads multiple typed logical SunSpec properties using
+   * optimized contiguous Modbus block requests.
+   */
+  readMany<
+    TProperties extends readonly SunSpecPropertyName[],
+  >(
+    properties: TProperties,
+  ): Promise<
+    SunSpecPropertyValues<TProperties>
   >;
 
   /**

@@ -5,6 +5,7 @@ import type {
 
 import type {
   SunSpecPropertyReader,
+  SunSpecPropertyValues,
 } from './SunSpecPropertyReader.js';
 
 /**
@@ -43,6 +44,24 @@ export abstract class PropertyApi {
 
     return this.propertyReader.read(
       property,
+    );
+
+  }
+
+  /**
+   * Reads multiple typed logical SunSpec properties using
+   * optimized contiguous Modbus block requests.
+   */
+  protected readMany<
+    TProperties extends readonly SunSpecPropertyName[],
+  >(
+    properties: TProperties,
+  ): Promise<
+    SunSpecPropertyValues<TProperties>
+  > {
+
+    return this.propertyReader.readMany(
+      properties,
     );
 
   }

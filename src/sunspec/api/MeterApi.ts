@@ -15,6 +15,44 @@ import type {
 } from './SunSpecPropertyReader.js';
 
 /**
+ * Meter properties included in one coherent snapshot read.
+ */
+const METER_SNAPSHOT_PROPERTIES = [
+  SunSpecProperty.Meter.Current,
+  SunSpecProperty.Meter.CurrentA,
+  SunSpecProperty.Meter.CurrentB,
+  SunSpecProperty.Meter.CurrentC,
+  SunSpecProperty.Meter.VoltageLineNeutral,
+  SunSpecProperty.Meter.VoltageAN,
+  SunSpecProperty.Meter.VoltageBN,
+  SunSpecProperty.Meter.VoltageCN,
+  SunSpecProperty.Meter.VoltageLineLine,
+  SunSpecProperty.Meter.VoltageAB,
+  SunSpecProperty.Meter.VoltageBC,
+  SunSpecProperty.Meter.VoltageCA,
+  SunSpecProperty.Meter.Frequency,
+  SunSpecProperty.Meter.ActivePower,
+  SunSpecProperty.Meter.ActivePowerA,
+  SunSpecProperty.Meter.ActivePowerB,
+  SunSpecProperty.Meter.ActivePowerC,
+  SunSpecProperty.Meter.ApparentPower,
+  SunSpecProperty.Meter.ApparentPowerA,
+  SunSpecProperty.Meter.ApparentPowerB,
+  SunSpecProperty.Meter.ApparentPowerC,
+  SunSpecProperty.Meter.ReactivePower,
+  SunSpecProperty.Meter.ReactivePowerA,
+  SunSpecProperty.Meter.ReactivePowerB,
+  SunSpecProperty.Meter.ReactivePowerC,
+  SunSpecProperty.Meter.PowerFactor,
+  SunSpecProperty.Meter.PowerFactorA,
+  SunSpecProperty.Meter.PowerFactorB,
+  SunSpecProperty.Meter.PowerFactorC,
+  SunSpecProperty.Meter.ExportedEnergy,
+  SunSpecProperty.Meter.ImportedEnergy,
+  SunSpecProperty.Meter.Events,
+] as const;
+
+/**
  * Provides convenient access to SunSpec meter properties.
  *
  * SunSpec Model ID: 203
@@ -363,7 +401,8 @@ export class MeterApi
   }
 
   /**
-   * Reads all currently exposed meter properties.
+   * Reads all currently exposed meter properties from one
+   * coherent Modbus block snapshot.
    *
    * Import and export power are derived from the signed
    * active-power value without performing additional reads.
@@ -371,73 +410,15 @@ export class MeterApi
   public async snapshot():
     Promise<MeterSnapshot> {
 
-    const [
-      current,
-      currentA,
-      currentB,
-      currentC,
-      voltageLineNeutral,
-      voltageAN,
-      voltageBN,
-      voltageCN,
-      voltageLineLine,
-      voltageAB,
-      voltageBC,
-      voltageCA,
-      frequency,
-      activePower,
-      activePowerA,
-      activePowerB,
-      activePowerC,
-      apparentPower,
-      apparentPowerA,
-      apparentPowerB,
-      apparentPowerC,
-      reactivePower,
-      reactivePowerA,
-      reactivePowerB,
-      reactivePowerC,
-      powerFactor,
-      powerFactorA,
-      powerFactorB,
-      powerFactorC,
-      exportedEnergy,
-      importedEnergy,
-      events,
-    ] = await Promise.all([
-      this.current(),
-      this.currentA(),
-      this.currentB(),
-      this.currentC(),
-      this.voltageLineNeutral(),
-      this.voltageAN(),
-      this.voltageBN(),
-      this.voltageCN(),
-      this.voltageLineLine(),
-      this.voltageAB(),
-      this.voltageBC(),
-      this.voltageCA(),
-      this.frequency(),
-      this.activePower(),
-      this.activePowerA(),
-      this.activePowerB(),
-      this.activePowerC(),
-      this.apparentPower(),
-      this.apparentPowerA(),
-      this.apparentPowerB(),
-      this.apparentPowerC(),
-      this.reactivePower(),
-      this.reactivePowerA(),
-      this.reactivePowerB(),
-      this.reactivePowerC(),
-      this.powerFactor(),
-      this.powerFactorA(),
-      this.powerFactorB(),
-      this.powerFactorC(),
-      this.exportedEnergy(),
-      this.importedEnergy(),
-      this.events(),
-    ]);
+    const values =
+      await this.readMany(
+        METER_SNAPSHOT_PROPERTIES,
+      );
+
+    const activePower =
+      values[
+        SunSpecProperty.Meter.ActivePower
+      ];
 
     const importPower =
       MeterApi.calculateImportPower(
@@ -450,40 +431,102 @@ export class MeterApi
       );
 
     return {
-      current,
-      currentA,
-      currentB,
-      currentC,
-      voltageLineNeutral,
-      voltageAN,
-      voltageBN,
-      voltageCN,
-      voltageLineLine,
-      voltageAB,
-      voltageBC,
-      voltageCA,
-      frequency,
+      current:
+        values[SunSpecProperty.Meter.Current],
+
+      currentA:
+        values[SunSpecProperty.Meter.CurrentA],
+
+      currentB:
+        values[SunSpecProperty.Meter.CurrentB],
+
+      currentC:
+        values[SunSpecProperty.Meter.CurrentC],
+
+      voltageLineNeutral:
+        values[SunSpecProperty.Meter.VoltageLineNeutral],
+
+      voltageAN:
+        values[SunSpecProperty.Meter.VoltageAN],
+
+      voltageBN:
+        values[SunSpecProperty.Meter.VoltageBN],
+
+      voltageCN:
+        values[SunSpecProperty.Meter.VoltageCN],
+
+      voltageLineLine:
+        values[SunSpecProperty.Meter.VoltageLineLine],
+
+      voltageAB:
+        values[SunSpecProperty.Meter.VoltageAB],
+
+      voltageBC:
+        values[SunSpecProperty.Meter.VoltageBC],
+
+      voltageCA:
+        values[SunSpecProperty.Meter.VoltageCA],
+
+      frequency:
+        values[SunSpecProperty.Meter.Frequency],
+
       activePower,
       importPower,
       exportPower,
-      activePowerA,
-      activePowerB,
-      activePowerC,
-      apparentPower,
-      apparentPowerA,
-      apparentPowerB,
-      apparentPowerC,
-      reactivePower,
-      reactivePowerA,
-      reactivePowerB,
-      reactivePowerC,
-      powerFactor,
-      powerFactorA,
-      powerFactorB,
-      powerFactorC,
-      exportedEnergy,
-      importedEnergy,
-      events,
+
+      activePowerA:
+        values[SunSpecProperty.Meter.ActivePowerA],
+
+      activePowerB:
+        values[SunSpecProperty.Meter.ActivePowerB],
+
+      activePowerC:
+        values[SunSpecProperty.Meter.ActivePowerC],
+
+      apparentPower:
+        values[SunSpecProperty.Meter.ApparentPower],
+
+      apparentPowerA:
+        values[SunSpecProperty.Meter.ApparentPowerA],
+
+      apparentPowerB:
+        values[SunSpecProperty.Meter.ApparentPowerB],
+
+      apparentPowerC:
+        values[SunSpecProperty.Meter.ApparentPowerC],
+
+      reactivePower:
+        values[SunSpecProperty.Meter.ReactivePower],
+
+      reactivePowerA:
+        values[SunSpecProperty.Meter.ReactivePowerA],
+
+      reactivePowerB:
+        values[SunSpecProperty.Meter.ReactivePowerB],
+
+      reactivePowerC:
+        values[SunSpecProperty.Meter.ReactivePowerC],
+
+      powerFactor:
+        values[SunSpecProperty.Meter.PowerFactor],
+
+      powerFactorA:
+        values[SunSpecProperty.Meter.PowerFactorA],
+
+      powerFactorB:
+        values[SunSpecProperty.Meter.PowerFactorB],
+
+      powerFactorC:
+        values[SunSpecProperty.Meter.PowerFactorC],
+
+      exportedEnergy:
+        values[SunSpecProperty.Meter.ExportedEnergy],
+
+      importedEnergy:
+        values[SunSpecProperty.Meter.ImportedEnergy],
+
+      events:
+        values[SunSpecProperty.Meter.Events],
     };
 
   }
