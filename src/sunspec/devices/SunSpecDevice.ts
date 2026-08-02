@@ -3,6 +3,10 @@ import {
 } from '../../device/ManagedDevice.js';
 
 import {
+  BatteryApi,
+} from '../api/BatteryApi.js';
+
+import {
   CommonApi,
 } from '../api/CommonApi.js';
 
@@ -83,6 +87,9 @@ export class SunSpecDevice {
   public readonly storage:
     StorageApi | undefined;
 
+  public readonly battery:
+    BatteryApi | undefined;
+
   public constructor(
 
     private readonly deviceInformation:
@@ -93,6 +100,8 @@ export class SunSpecDevice {
 
     private readonly logicalDevice:
       ManagedDevice,
+
+    hasSolarEdgeBattery = false,
 
   ) {
 
@@ -125,6 +134,13 @@ export class SunSpecDevice {
         StorageModel713.MODEL_ID,
       )
         ? new StorageApi(
+          this,
+        )
+        : undefined;
+
+    this.battery =
+      hasSolarEdgeBattery
+        ? new BatteryApi(
           this,
         )
         : undefined;
@@ -215,18 +231,27 @@ export class SunSpecDevice {
         )
         : this.storage.snapshot();
 
+    const batteryPromise =
+      this.battery === undefined
+        ? Promise.resolve(
+          undefined,
+        )
+        : this.battery.snapshot();
+
     const [
       common,
       inverter,
       nameplate,
       meter,
       storage,
+      battery,
     ] = await Promise.all([
       commonPromise,
       inverterPromise,
       nameplatePromise,
       meterPromise,
       storagePromise,
+      batteryPromise,
     ]);
 
     return {
@@ -249,6 +274,12 @@ export class SunSpecDevice {
         ? {}
         : {
           storage,
+        }),
+
+      ...(battery === undefined
+        ? {}
+        : {
+          battery,
         }),
     };
 

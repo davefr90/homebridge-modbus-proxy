@@ -30,6 +30,10 @@ import {
   SunSpecDeviceFactory,
 } from './SunSpecDeviceFactory.js';
 
+import {
+  SolarEdgeBatteryDiscovery,
+} from './solaredge/SolarEdgeBatteryDiscovery.js';
+
 import type {
   SunSpecPropertyName,
   SunSpecPropertyValue,
@@ -101,10 +105,19 @@ export class SunSpecClient {
           normalizedOptions.unitId,
         );
 
+      const batteryDiscoveryResult =
+        await SolarEdgeBatteryDiscovery
+          .discover(
+            modbusClient,
+            normalizedOptions.unitId,
+          );
+
       const sunSpecDevice =
         SunSpecDeviceFactory.create(
           discoveryResult,
           modbusClient,
+          batteryDiscoveryResult
+            ?.baseAddress,
         );
 
       return new SunSpecClient(

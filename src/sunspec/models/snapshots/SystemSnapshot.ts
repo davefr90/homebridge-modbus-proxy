@@ -1,4 +1,8 @@
 import type {
+  BatterySnapshot,
+} from './BatterySnapshot.js';
+
+import type {
   CommonSnapshot,
 } from './CommonSnapshot.js';
 
@@ -50,5 +54,12 @@ export interface SystemSnapshot {
    */
   readonly storage?:
     StorageSnapshot;
+
+  /**
+   * Proprietary battery data is present when a SolarEdge
+   * Battery 1 register block was detected.
+   */
+  readonly battery?:
+    BatterySnapshot;
 
 }

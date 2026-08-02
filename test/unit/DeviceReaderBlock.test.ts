@@ -196,5 +196,102 @@ describe(
       },
     );
 
+    it(
+      'reads separate register groups sequentially',
+      async () => {
+
+        const firstDefinition =
+          createDefinition(
+            'First Value',
+            100,
+          );
+
+        const secondDefinition =
+          createDefinition(
+            'Second Value',
+            300,
+          );
+
+        const registerMap =
+          new DeviceRegisterMap();
+
+        registerMap.add(
+          'first',
+          firstDefinition,
+        );
+
+        registerMap.add(
+          'second',
+          secondDefinition,
+        );
+
+        const callOrder:
+          string[] = [];
+
+        const readGroup =
+          vi.fn(
+            async (group) => {
+
+              callOrder.push(
+                `start:${group.startAddress}`,
+              );
+
+              await Promise.resolve();
+
+              callOrder.push(
+                `end:${group.startAddress}`,
+              );
+
+              const definition =
+                group.registers[0];
+
+              if (definition === undefined) {
+                throw new Error(
+                  'Expected a register definition.',
+                );
+              }
+
+              return new Map([
+                [
+                  definition,
+                  group.startAddress,
+                ],
+              ]);
+
+            },
+          );
+
+        const reader =
+          new DeviceReader(
+            registerMap,
+            {
+              read:
+                vi.fn(),
+              readGroup,
+            } as unknown as RegisterReader,
+          );
+
+        await expect(
+          reader.readMany([
+            'first',
+            'second',
+          ]),
+        ).resolves.toEqual({
+          first: 100,
+          second: 300,
+        });
+
+        expect(
+          callOrder,
+        ).toEqual([
+          'start:100',
+          'end:100',
+          'start:300',
+          'end:300',
+        ]);
+
+      },
+    );
+
   },
 );

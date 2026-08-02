@@ -66,6 +66,10 @@ import {
   SunSpecModelContainer,
 } from './SunSpecModelContainer.js';
 
+import {
+  SolarEdgeBatteryModel,
+} from './solaredge/SolarEdgeBatteryModel.js';
+
 /**
  * Creates a complete SunSpec device from a discovery result.
  */
@@ -74,6 +78,7 @@ export class SunSpecDeviceFactory {
   public static create(
     discoveryResult: SunSpecDiscoveryResult,
     modbusClient: ModbusClient,
+    solarEdgeBatteryBaseAddress?: number,
   ): SunSpecDevice {
 
     const deviceInformation =
@@ -100,6 +105,21 @@ export class SunSpecDeviceFactory {
         discoveredModel,
       );
 
+    }
+
+    const hasSolarEdgeBattery =
+      solarEdgeBatteryBaseAddress !== undefined;
+
+    if (
+      solarEdgeBatteryBaseAddress !== undefined
+    ) {
+      registerMap.addMap(
+        'battery',
+        SolarEdgeBatteryModel.create(
+          discoveryResult.unitId,
+          solarEdgeBatteryBaseAddress,
+        ),
+      );
     }
 
     const registerReader =
@@ -134,6 +154,7 @@ export class SunSpecDeviceFactory {
       deviceInformation,
       container,
       managedDevice,
+      hasSolarEdgeBattery,
     );
 
   }

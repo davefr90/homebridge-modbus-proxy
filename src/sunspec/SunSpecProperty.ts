@@ -221,4 +221,75 @@ export const SunSpecProperty = {
 
   },
 
+  /**
+   * Proprietary SolarEdge Battery 1 status and information
+   * block exposed by the inverter.
+   */
+  Battery: {
+
+    Manufacturer:
+      'battery.manufacturer',
+
+    Model:
+      'battery.model',
+
+    FirmwareVersion:
+      'battery.firmwareVersion',
+
+    SerialNumber:
+      'battery.serialNumber',
+
+    DeviceId:
+      'battery.deviceId',
+
+    RatedEnergy:
+      'battery.ratedEnergy',
+
+    MaximumChargeContinuousPower:
+      'battery.maximumChargeContinuousPower',
+
+    MaximumDischargeContinuousPower:
+      'battery.maximumDischargeContinuousPower',
+
+    MaximumChargePeakPower:
+      'battery.maximumChargePeakPower',
+
+    MaximumDischargePeakPower:
+      'battery.maximumDischargePeakPower',
+
+    AverageTemperature:
+      'battery.averageTemperature',
+
+    MaximumTemperature:
+      'battery.maximumTemperature',
+
+    Voltage:
+      'battery.voltage',
+
+    Current:
+      'battery.current',
+
+    Power:
+      'battery.power',
+
+    MaximumEnergy:
+      'battery.maximumEnergy',
+
+    AvailableEnergy:
+      'battery.availableEnergy',
+
+    StateOfHealth:
+      'battery.stateOfHealth',
+
+    StateOfEnergy:
+      'battery.stateOfEnergy',
+
+    Status:
+      'battery.status',
+
+    StatusInternal:
+      'battery.statusInternal',
+
+  },
+
 } as const;

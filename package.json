@@ -40,6 +40,7 @@
     "example:discover": "tsx examples/discover.ts",
     "example:meter-snapshot": "tsx examples/meter-snapshot.ts",
     "example:storage-snapshot": "tsx examples/storage-snapshot.ts",
+    "example:battery-snapshot": "tsx examples/battery-snapshot.ts",
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build",
     "watch": "npm run build && npm link && nodemon"
   },

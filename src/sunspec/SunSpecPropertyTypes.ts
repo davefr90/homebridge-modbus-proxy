@@ -206,6 +206,69 @@ export interface SunSpecPropertyTypes {
   [SunSpecProperty.Storage.Status]:
     number | undefined;
 
+  [SunSpecProperty.Battery.Manufacturer]:
+    string;
+
+  [SunSpecProperty.Battery.Model]:
+    string;
+
+  [SunSpecProperty.Battery.FirmwareVersion]:
+    string;
+
+  [SunSpecProperty.Battery.SerialNumber]:
+    string;
+
+  [SunSpecProperty.Battery.DeviceId]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.RatedEnergy]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumChargeContinuousPower]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumDischargeContinuousPower]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumChargePeakPower]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumDischargePeakPower]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.AverageTemperature]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumTemperature]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.Voltage]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.Current]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.Power]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.MaximumEnergy]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.AvailableEnergy]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.StateOfHealth]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.StateOfEnergy]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.Status]:
+    number | undefined;
+
+  [SunSpecProperty.Battery.StatusInternal]:
+    number | undefined;
+
 }
 
 export type SunSpecPropertyName =

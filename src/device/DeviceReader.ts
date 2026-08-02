@@ -189,15 +189,25 @@ export class DeviceReader {
         ],
       );
 
-    const groupResults =
-      await Promise.all(
-        groups.map(
-          (group) =>
-            this.registerReader.readGroup(
-              group,
-            ),
+    const groupResults:
+      ReadonlyMap<
+        RegisterDefinition,
+        RegisterValue
+      >[] = [];
+
+    /*
+     * Execute groups sequentially. Some Modbus TCP gateways,
+     * including SolarEdge secondary inverter forwarding, close
+     * the connection when multiple requests are outstanding on
+     * the same socket.
+     */
+    for (const group of groups) {
+      groupResults.push(
+        await this.registerReader.readGroup(
+          group,
         ),
       );
+    }
 
     const rawValues =
       new Map<
