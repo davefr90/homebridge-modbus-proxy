@@ -42,6 +42,7 @@
     "example:storage-snapshot": "tsx examples/storage-snapshot.ts",
     "example:battery-snapshot": "tsx examples/battery-snapshot.ts",
     "example:plant-snapshot": "tsx examples/plant-snapshot.ts",
+    "example:plant-monitor": "tsx examples/plant-monitor.ts",
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build",
     "watch": "npm run build && npm link && nodemon"
   },

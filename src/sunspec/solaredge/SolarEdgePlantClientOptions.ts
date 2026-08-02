@@ -28,4 +28,23 @@ export interface SolarEdgePlantClientOptions {
    */
   readonly baseAddresses?: readonly number[];
 
+  /**
+   * Maximum permitted change in signed meter power between
+   * the readings taken before and after all inverter units.
+   *
+   * A larger change indicates that the plant changed while
+   * the sequential Modbus snapshot was being assembled.
+   *
+   * @default 500
+   */
+  readonly meterConsistencyThresholdWatts?: number;
+
+  /**
+   * Number of immediate retries after an inconsistent meter
+   * frame was detected.
+   *
+   * @default 1
+   */
+  readonly snapshotRetryCount?: number;
+
 }

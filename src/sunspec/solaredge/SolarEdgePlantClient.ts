@@ -46,6 +46,11 @@ interface NormalizedSolarEdgePlantClientOptions {
 
   readonly baseAddresses: readonly number[];
 
+  readonly meterConsistencyThresholdWatts:
+    number;
+
+  readonly snapshotRetryCount: number;
+
 }
 
 /**
@@ -153,18 +158,75 @@ export class SolarEdgePlantClient {
   }
 
   /**
-   * Reads each unit and model sequentially, then calculates
-   * the plant-wide totals.
+   * Reads the meter before and after all sequential unit
+   * snapshots. A large meter change invalidates the frame and
+   * triggers an immediate retry so values from different plant
+   * states are not combined.
    */
   public async snapshot():
     Promise<SolarEdgePlantSnapshot> {
 
+    const maximumAttempts =
+      this.clientOptions
+        .snapshotRetryCount
+      + 1;
+
+    let lastMeterChange = 0;
+
+    for (
+      let attempt = 1;
+      attempt <= maximumAttempts;
+      attempt += 1
+    ) {
+
+      const meterBefore =
+        await this.readMeterSnapshot();
+
+      const units =
+        await this.readUnitSnapshots();
+
+      const meterAfter =
+        await this.readMeterSnapshot();
+
+      lastMeterChange =
+        Math.abs(
+          meterAfter.activePower
+          - meterBefore.activePower,
+        );
+
+      if (
+        lastMeterChange
+        <= this.clientOptions
+          .meterConsistencyThresholdWatts
+      ) {
+        return SolarEdgePlantSnapshotCalculator
+          .calculate(
+            units,
+            meterAfter,
+          );
+      }
+
+    }
+
+    throw new Error(
+      'SolarEdge plant changed by '
+      + `${lastMeterChange} W while the snapshot was read; `
+      + 'the permitted meter change is '
+      + `${this.clientOptions.meterConsistencyThresholdWatts} W `
+      + `after ${maximumAttempts} attempts.`,
+    );
+
+  }
+
+  /**
+   * Reads all inverter and optional battery blocks in their
+   * configured order.
+   */
+  private async readUnitSnapshots():
+    Promise<SolarEdgePlantUnitSnapshot[]> {
+
     const units:
       SolarEdgePlantUnitSnapshot[] = [];
-
-    let meterSnapshot:
-      SolarEdgePlantSnapshot['meter']
-      | undefined;
 
     for (
       const unitId
@@ -186,23 +248,6 @@ export class SolarEdgePlantClient {
           : await device.battery
             .snapshot();
 
-      if (
-        unitId ===
-        this.clientOptions.meterUnitId
-      ) {
-
-        if (device.meter === undefined) {
-          throw new Error(
-            `SolarEdge meter model 203 was not found on unit ${unitId}.`,
-          );
-        }
-
-        meterSnapshot =
-          await device.meter
-            .snapshot();
-
-      }
-
       units.push({
         unitId,
         inverter,
@@ -216,17 +261,33 @@ export class SolarEdgePlantClient {
 
     }
 
-    if (meterSnapshot === undefined) {
+    return units;
+
+  }
+
+  /**
+   * Reads the shared site meter used as the consistency frame
+   * around all inverter units.
+   */
+  private async readMeterSnapshot():
+    Promise<SolarEdgePlantSnapshot['meter']> {
+
+    const meterUnitId =
+      this.clientOptions
+        .meterUnitId;
+
+    const meter =
+      this.device(
+        meterUnitId,
+      ).meter;
+
+    if (meter === undefined) {
       throw new Error(
-        `No meter snapshot was read from unit ${this.clientOptions.meterUnitId}.`,
+        `SolarEdge meter model 203 was not found on unit ${meterUnitId}.`,
       );
     }
 
-    return SolarEdgePlantSnapshotCalculator
-      .calculate(
-        units,
-        meterSnapshot,
-      );
+    return meter.snapshot();
 
   }
 
@@ -327,6 +388,14 @@ export class SolarEdgePlantClient {
         0,
       ];
 
+    const meterConsistencyThresholdWatts =
+      options.meterConsistencyThresholdWatts
+      ?? 500;
+
+    const snapshotRetryCount =
+      options.snapshotRetryCount
+      ?? 1;
+
     if (host.length === 0) {
       throw new Error(
         'SolarEdge plant host must not be empty.',
@@ -396,6 +465,28 @@ export class SolarEdgePlantClient {
       }
     }
 
+    if (
+      !Number.isFinite(
+        meterConsistencyThresholdWatts,
+      )
+      || meterConsistencyThresholdWatts < 0
+    ) {
+      throw new Error(
+        'Meter consistency threshold must be a finite non-negative number.',
+      );
+    }
+
+    if (
+      !Number.isInteger(
+        snapshotRetryCount,
+      )
+      || snapshotRetryCount < 0
+    ) {
+      throw new Error(
+        'Snapshot retry count must be a non-negative integer.',
+      );
+    }
+
     return {
       host,
       port,
@@ -411,6 +502,9 @@ export class SolarEdgePlantClient {
         Object.freeze(
           [...baseAddresses],
         ),
+
+      meterConsistencyThresholdWatts,
+      snapshotRetryCount,
     };
 
   }
