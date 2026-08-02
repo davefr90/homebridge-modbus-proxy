@@ -1,17 +1,89 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "ModbusProxy",
   "pluginType": "platform",
   "singular": true,
   "strictValidation": false,
   "schema": {
     "type": "object",
-    "required": ["name"],
+    "required": [
+      "name"
+    ],
     "additionalProperties": false,
     "properties": {
       "name": {
         "title": "Name",
         "type": "string",
-        "default": "Example Dynamic Platform"
+        "default": "Modbus Proxy"
+      },
+      "solarEdge": {
+        "title": "SolarEdge Plant Monitoring",
+        "description": "Optional persistent monitoring for a multi-inverter SolarEdge plant. Remove this section to disable monitoring.",
+        "type": "object",
+        "required": [
+          "host"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "host": {
+            "title": "SolarEdge IP Address or Hostname",
+            "type": "string",
+            "minLength": 1,
+            "placeholder": "192.168.2.101"
+          },
+          "port": {
+            "title": "Modbus TCP Port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 502
+          },
+          "unitIds": {
+            "title": "Inverter Unit IDs",
+            "description": "Modbus unit IDs of all SolarEdge inverters in this plant.",
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "default": [
+              2,
+              3
+            ],
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 247
+            }
+          },
+          "meterUnitId": {
+            "title": "Meter Unit ID",
+            "description": "Inverter unit containing SunSpec Meter Model 203.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 247,
+            "default": 2
+          },
+          "pollIntervalMs": {
+            "title": "Polling Interval",
+            "description": "Time between complete plant snapshots in milliseconds.",
+            "type": "integer",
+            "minimum": 1000,
+            "default": 5000
+          },
+          "meterConsistencyThresholdWatts": {
+            "title": "Meter Consistency Threshold",
+            "description": "Maximum permitted meter power change while a sequential plant snapshot is read.",
+            "type": "number",
+            "minimum": 0,
+            "default": 500
+          },
+          "snapshotRetryCount": {
+            "title": "Snapshot Retries",
+            "description": "Immediate retries after an inconsistent plant snapshot.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "default": 1
+          }
+        }
       }
     }
   }
