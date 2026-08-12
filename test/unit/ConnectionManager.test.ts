@@ -7,6 +7,8 @@ import {
 } from 'vitest';
 
 import { ModbusClient } from '../../src/client/ModbusClient.js';
+import { ModbusFunctionCode } from '../../src/protocol/ModbusFunctionCode.js';
+import { ModbusTcpFrame } from '../../src/protocol/ModbusTcpFrame.js';
 import { ConnectionManager } from '../../src/proxy/ConnectionManager.js';
 import type { ManagedDevice } from '../../src/proxy/ManagedDevice.js';
 import { ManagedDeviceRuntime } from '../../src/proxy/ManagedDeviceRuntime.js';
@@ -185,5 +187,102 @@ describe('ConnectionManager', () => {
     expect(
       manager.getRuntime().lastError,
     ).toBe(error);
+  });
+
+  it('serializes frames across all proxy sessions', async () => {
+    const {
+      manager,
+      client,
+    } = createManager();
+
+    vi.spyOn(
+      client,
+      'connect',
+    ).mockResolvedValue();
+
+    await manager.connect();
+
+    let releaseFirstRequest:
+      (() => void)
+      | undefined;
+
+    const firstRequestGate =
+      new Promise<void>(
+        (resolve) => {
+          releaseFirstRequest =
+            resolve;
+        },
+      );
+
+    const executionOrder:
+      number[] = [];
+
+    const executeFrame =
+      vi.spyOn(
+        client,
+        'executeFrame',
+      ).mockImplementation(
+        async (frame) => {
+          executionOrder.push(
+            frame.transactionId,
+          );
+
+          if (frame.transactionId === 1) {
+            await firstRequestGate;
+          }
+
+          return frame;
+        },
+      );
+
+    const firstFrame =
+      new ModbusTcpFrame(
+        1,
+        0,
+        2,
+        ModbusFunctionCode.ReadHoldingRegisters,
+        Buffer.alloc(4),
+      );
+
+    const secondFrame =
+      new ModbusTcpFrame(
+        2,
+        0,
+        3,
+        ModbusFunctionCode.ReadHoldingRegisters,
+        Buffer.alloc(4),
+      );
+
+    const firstOperation =
+      manager.executeFrame(
+        firstFrame,
+      );
+
+    const secondOperation =
+      manager.executeFrame(
+        secondFrame,
+      );
+
+    await Promise.resolve();
+
+    expect(
+      executeFrame,
+    ).toHaveBeenCalledTimes(
+      1,
+    );
+
+    releaseFirstRequest?.();
+
+    await Promise.all([
+      firstOperation,
+      secondOperation,
+    ]);
+
+    expect(
+      executionOrder,
+    ).toEqual([
+      1,
+      2,
+    ]);
   });
 });

@@ -7,6 +7,14 @@ import type {
 } from 'homebridge';
 
 import type {
+  NormalizedModbusTcpProxyPlatformConfiguration,
+} from './config/ModbusTcpProxyPlatformConfiguration.js';
+
+import {
+  ModbusTcpProxyPlatformConfigurationLoader,
+} from './config/ModbusTcpProxyPlatformConfigurationLoader.js';
+
+import type {
   NormalizedSolarEdgePlantPlatformConfiguration,
 } from './config/SolarEdgePlantPlatformConfiguration.js';
 
@@ -17,6 +25,14 @@ import {
 import type {
   Logger,
 } from './logging/Logger.js';
+
+import {
+  ModbusTcpProxyRuntime,
+} from './runtime/ModbusTcpProxyRuntime.js';
+
+import type {
+  ModbusTcpProxyRuntimeStatus,
+} from './runtime/ModbusTcpProxyRuntime.js';
 
 import {
   SolarEdgePlantRuntime,
@@ -40,6 +56,8 @@ import {
  */
 export interface ModbusProxyPlatformConfiguration
 extends PlatformConfig {
+
+  readonly modbusProxy?: unknown;
 
   readonly solarEdge?: unknown;
 
@@ -68,6 +86,26 @@ export type ModbusProxyPlantRuntimeFactory =
   ) => ModbusProxyPlantRuntime;
 
 /**
+ * Modbus TCP proxy runtime surface managed by the platform.
+ */
+export interface ModbusProxyServerRuntime {
+
+  start(): Promise<void>;
+
+  stop(): Promise<void>;
+
+  status(): ModbusTcpProxyRuntimeStatus;
+
+}
+
+export type ModbusProxyServerRuntimeFactory =
+  (
+    configuration:
+      NormalizedModbusTcpProxyPlatformConfiguration,
+    logger: Logger,
+  ) => ModbusProxyServerRuntime;
+
+/**
  * Main Homebridge platform class.
  *
  * The platform owns long-running services and their cached
@@ -80,7 +118,14 @@ implements DynamicPlatformPlugin {
     ModbusProxyPlantRuntime
     | undefined;
 
+  private readonly proxyRuntime:
+    ModbusProxyServerRuntime
+    | undefined;
+
   private readonly solarEdgeConfigured:
+    boolean;
+
+  private readonly modbusProxyConfigured:
     boolean;
 
   public constructor(
@@ -103,6 +148,17 @@ implements DynamicPlatformPlugin {
         logger,
       ),
 
+    proxyRuntimeFactory:
+      ModbusProxyServerRuntimeFactory =
+    (
+      configuration,
+      logger,
+    ) =>
+      new ModbusTcpProxyRuntime(
+        configuration,
+        logger,
+      ),
+
   ) {
 
     this.log.debug(
@@ -112,9 +168,17 @@ implements DynamicPlatformPlugin {
     this.solarEdgeConfigured =
       config.solarEdge !== undefined;
 
+    this.modbusProxyConfigured =
+      config.modbusProxy !== undefined;
+
     this.plantRuntime =
       this.createPlantRuntime(
         plantRuntimeFactory,
+      );
+
+    this.proxyRuntime =
+      this.createProxyRuntime(
+        proxyRuntimeFactory,
       );
 
     this.api.on(
@@ -144,27 +208,46 @@ implements DynamicPlatformPlugin {
       'Modbus Proxy platform started.',
     );
 
+    if (this.proxyRuntime === undefined) {
+      if (!this.modbusProxyConfigured) {
+        this.log.info(
+          'Modbus TCP proxy server is not configured.',
+        );
+      }
+    } else {
+      try {
+        await this.proxyRuntime.start();
+      } catch (error) {
+        const normalizedError =
+          ModbusProxyPlatform.normalizeError(
+            error,
+          );
+
+        this.log.error(
+          `Modbus TCP proxy server could not be started: ${normalizedError.message}`,
+        );
+      }
+    }
+
     if (this.plantRuntime === undefined) {
       if (!this.solarEdgeConfigured) {
         this.log.info(
           'SolarEdge plant monitoring is not configured.',
         );
       }
+    } else {
+      try {
+        await this.plantRuntime.start();
+      } catch (error) {
+        const normalizedError =
+          ModbusProxyPlatform.normalizeError(
+            error,
+          );
 
-      return;
-    }
-
-    try {
-      await this.plantRuntime.start();
-    } catch (error) {
-      const normalizedError =
-        ModbusProxyPlatform.normalizeError(
-          error,
+        this.log.error(
+          `SolarEdge plant monitoring could not be started: ${normalizedError.message}`,
         );
-
-      this.log.error(
-        `SolarEdge plant monitoring could not be started: ${normalizedError.message}`,
-      );
+      }
     }
 
   }
@@ -186,6 +269,20 @@ implements DynamicPlatformPlugin {
 
       this.log.error(
         `SolarEdge plant monitoring could not be stopped cleanly: ${normalizedError.message}`,
+      );
+    }
+
+    try {
+      await this.proxyRuntime
+        ?.stop();
+    } catch (error) {
+      const normalizedError =
+        ModbusProxyPlatform.normalizeError(
+          error,
+        );
+
+      this.log.error(
+        `Modbus TCP proxy server could not be stopped cleanly: ${normalizedError.message}`,
       );
     }
 
@@ -211,6 +308,14 @@ implements DynamicPlatformPlugin {
     SolarEdgePlantMonitorStatus | undefined {
 
     return this.plantRuntime
+      ?.status();
+
+  }
+
+  public modbusProxyStatus():
+    ModbusTcpProxyRuntimeStatus | undefined {
+
+    return this.proxyRuntime
       ?.status();
 
   }
@@ -268,6 +373,44 @@ implements DynamicPlatformPlugin {
 
       this.log.error(
         `Invalid SolarEdge plant configuration: ${normalizedError.message}`,
+      );
+
+      return undefined;
+
+    }
+
+  }
+
+  private createProxyRuntime(
+    factory: ModbusProxyServerRuntimeFactory,
+  ): ModbusProxyServerRuntime | undefined {
+
+    try {
+
+      const configuration =
+        new ModbusTcpProxyPlatformConfigurationLoader()
+          .load(
+            this.config.modbusProxy,
+          );
+
+      if (configuration === undefined) {
+        return undefined;
+      }
+
+      return factory(
+        configuration,
+        this.createRuntimeLogger(),
+      );
+
+    } catch (error) {
+
+      const normalizedError =
+        ModbusProxyPlatform.normalizeError(
+          error,
+        );
+
+      this.log.error(
+        `Invalid Modbus TCP proxy configuration: ${normalizedError.message}`,
       );
 
       return undefined;

@@ -148,7 +148,6 @@ export class ProxySession {
 
     const response =
       await this.connectionManager
-        .getClient()
         .executeFrame(frame);
 
     if (!this.isConnected) {

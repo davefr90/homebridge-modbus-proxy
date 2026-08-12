@@ -15,6 +15,10 @@ import type {
   Logger,
 } from '../../src/logging/Logger.js';
 
+import type {
+  ModbusTcpProxyRuntimeStatus,
+} from '../../src/runtime/ModbusTcpProxyRuntime.js';
+
 import {
   ModbusProxyPlatform,
 } from '../../src/platform.js';
@@ -92,6 +96,18 @@ function createStatus():
     lastUpdatedAt: undefined,
     lastError: undefined,
     consecutiveFailures: 0,
+  };
+
+}
+
+function createProxyStatus():
+  ModbusTcpProxyRuntimeStatus {
+
+  return {
+    running: true,
+    targetConnected: true,
+    listeningPort: 1502,
+    clientCount: 2,
   };
 
 }
@@ -286,6 +302,155 @@ describe(
 
         expect(
           platform.plantMonitorStatus(),
+        ).toBeUndefined();
+
+      },
+    );
+
+    it(
+      'creates and owns a configured Modbus TCP proxy runtime',
+      async () => {
+
+        const status =
+          createProxyStatus();
+
+        const proxyRuntime = {
+          start: vi.fn()
+            .mockResolvedValue(
+              undefined,
+            ),
+          stop: vi.fn()
+            .mockResolvedValue(
+              undefined,
+            ),
+          status: vi.fn()
+            .mockReturnValue(
+              status,
+            ),
+        };
+
+        const plantRuntimeFactory =
+          vi.fn();
+
+        const proxyRuntimeFactory =
+          vi.fn()
+            .mockReturnValue(
+              proxyRuntime,
+            );
+
+        const log =
+          createLogging();
+
+        const {
+          api,
+        } = createApi();
+
+        const platform =
+          new ModbusProxyPlatform(
+            log,
+            {
+              platform: 'ModbusProxy',
+              name: 'Modbus Proxy',
+              modbusProxy: {
+                targetHost: '192.168.2.101',
+              },
+            },
+            api,
+            plantRuntimeFactory,
+            proxyRuntimeFactory,
+          );
+
+        expect(
+          proxyRuntimeFactory,
+        ).toHaveBeenCalledWith(
+          {
+            targetHost: '192.168.2.101',
+            targetPort: 502,
+            listenHost: '0.0.0.0',
+            listenPort: 1502,
+          },
+          expect.any(
+            Object,
+          ),
+        );
+
+        await platform.start();
+
+        expect(
+          proxyRuntime.start,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+        expect(
+          platform.modbusProxyStatus(),
+        ).toBe(
+          status,
+        );
+
+        await platform.shutdown();
+
+        expect(
+          proxyRuntime.stop,
+        ).toHaveBeenCalledTimes(
+          1,
+        );
+
+      },
+    );
+
+    it(
+      'reports invalid Modbus TCP proxy configuration without crashing the platform',
+      async () => {
+
+        const plantRuntimeFactory =
+          vi.fn();
+
+        const proxyRuntimeFactory =
+          vi.fn();
+
+        const log =
+          createLogging();
+
+        const {
+          api,
+        } = createApi();
+
+        const platform =
+          new ModbusProxyPlatform(
+            log,
+            {
+              platform: 'ModbusProxy',
+              name: 'Modbus Proxy',
+              modbusProxy: {
+                targetHost: '',
+              },
+            },
+            api,
+            plantRuntimeFactory,
+            proxyRuntimeFactory,
+          );
+
+        expect(
+          proxyRuntimeFactory,
+        ).not.toHaveBeenCalled();
+
+        expect(
+          log.error,
+        ).toHaveBeenCalledWith(
+          'Invalid Modbus TCP proxy configuration: Modbus TCP proxy target host must not be empty.',
+        );
+
+        await platform.start();
+
+        expect(
+          log.info,
+        ).not.toHaveBeenCalledWith(
+          'Modbus TCP proxy server is not configured.',
+        );
+
+        expect(
+          platform.modbusProxyStatus(),
         ).toBeUndefined();
 
       },

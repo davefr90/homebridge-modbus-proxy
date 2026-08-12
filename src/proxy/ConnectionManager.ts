@@ -1,6 +1,7 @@
 import { ModbusClient } from '../client/ModbusClient.js';
 import { Logger } from '../logging/Logger.js';
 import { NullLogger } from '../logging/NullLogger.js';
+import { ModbusTcpFrame } from '../protocol/ModbusTcpFrame.js';
 import { ManagedDeviceRuntime } from './ManagedDeviceRuntime.js';
 
 /**
@@ -27,6 +28,10 @@ export class ConnectionManager {
 
   private currentReconnectDelayMs =
     ConnectionManager.initialReconnectDelayMs;
+
+  private requestQueue:
+    Promise<void> =
+      Promise.resolve();
 
   /**
    * Creates a new connection manager.
@@ -78,6 +83,42 @@ export class ConnectionManager {
    */
   public isConnected(): boolean {
     return this.runtime.connected;
+  }
+
+  /**
+   * Serializes raw proxy requests across all downstream TCP
+   * sessions so the target device receives only one request
+   * at a time.
+   */
+  public executeFrame(
+    frame: ModbusTcpFrame,
+  ): Promise<ModbusTcpFrame> {
+
+    const operation =
+      this.requestQueue
+        .then(
+          () => {
+            if (!this.isConnected()) {
+              throw new Error(
+                'Target Modbus connection is not available.',
+              );
+            }
+
+            return this.client
+              .executeFrame(
+                frame,
+              );
+          },
+        );
+
+    this.requestQueue =
+      operation.then(
+        () => undefined,
+        () => undefined,
+      );
+
+    return operation;
+
   }
 
   /**

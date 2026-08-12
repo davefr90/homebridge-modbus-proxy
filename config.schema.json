@@ -15,6 +15,46 @@
         "type": "string",
         "default": "Modbus Proxy"
       },
+      "modbusProxy": {
+        "title": "Modbus TCP Proxy Server",
+        "description": "Optional multi-client Modbus TCP proxy. Clients connect to this Homebridge host and the configured listen port; requests are serialized over one shared target connection.",
+        "type": "object",
+        "required": [
+          "targetHost"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "targetHost": {
+            "title": "Target IP Address or Hostname",
+            "description": "Modbus TCP device receiving the forwarded requests.",
+            "type": "string",
+            "minLength": 1,
+            "placeholder": "192.168.2.101"
+          },
+          "targetPort": {
+            "title": "Target Modbus TCP Port",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 502
+          },
+          "listenHost": {
+            "title": "Listen Address",
+            "description": "Use 0.0.0.0 to accept clients on every Homebridge network interface.",
+            "type": "string",
+            "minLength": 1,
+            "default": "0.0.0.0"
+          },
+          "listenPort": {
+            "title": "Proxy Listen Port",
+            "description": "Port used by Wallbox, energy management and other Modbus TCP clients.",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 1502
+          }
+        }
+      },
       "solarEdge": {
         "title": "SolarEdge Plant Monitoring",
         "description": "Optional persistent monitoring for a multi-inverter SolarEdge plant. Remove this section to disable monitoring.",

@@ -75,6 +75,24 @@ function waitForEventLoop(): Promise<void> {
   });
 }
 
+/**
+ * Waits for the proxy server to observe a TCP session change.
+ */
+async function waitForSessionCount(
+  server: ProxyServer,
+  expectedCount: number,
+): Promise<void> {
+  const deadline =
+    Date.now() + 1000;
+
+  while (
+    server.sessionCount !== expectedCount
+    && Date.now() < deadline
+  ) {
+    await waitForEventLoop();
+  }
+}
+
 describe('ProxyServer', () => {
   const device: ManagedDevice = {
     id: 'device-1',
@@ -238,7 +256,10 @@ describe('ProxyServer', () => {
       client.destroy();
     });
 
-    await waitForEventLoop();
+    await waitForSessionCount(
+      server,
+      0,
+    );
 
     expect(server.sessionCount).toBe(0);
   });

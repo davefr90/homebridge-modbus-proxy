@@ -2,7 +2,7 @@
   "name": "homebridge-modbus-proxy",
   "displayName": "Modbus Proxy",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A scalable Modbus TCP proxy plugin for Homebridge with multi-client support, request queueing, caching and statistics.",
   "author": "David Friedrich",
@@ -62,5 +62,11 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.2",
     "vitest": "^4.1.10"
-  }
+  },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md",
+    "LICENSE"
+  ]
 }
